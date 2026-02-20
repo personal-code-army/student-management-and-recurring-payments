@@ -9,6 +9,7 @@ target/
 hs_err_pid*
 
 ### IntelliJ IDEA ###
+.idea
 .idea/
 *.iws
 *.iml
