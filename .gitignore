@@ -1,8 +1,5 @@
 ### Maven ###
 target/
-!**/src/main/**/target/
-!**/src/test/**/target/
-.mvn/wrapper/maven-wrapper.jar
 
 ### Logs ###
 *.log
@@ -17,14 +14,6 @@ hs_err_pid*
 *.iml
 *.ipr
 out/
-.idea_modules/
-
-# IntelliJ specific caches
-.idea/**/workspace.xml
-.idea/**/tasks.xml
-.idea/**/usage.statistics.xml
-.idea/**/dictionaries
-.idea/**/shelf
 
 ### Eclipse / STS ###
 .apt_generated
@@ -42,8 +31,6 @@ out/
 /nbdist/
 /.nb-gradle/
 build/
-!**/src/main/**/build/
-!**/src/test/**/build/
 
 ### VS Code ###
 .vscode/
@@ -52,6 +39,6 @@ build/
 .DS_Store
 Thumbs.db
 
-### Env ###
+### Environment ###
 .env
 .env.*
