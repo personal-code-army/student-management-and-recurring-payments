@@ -17,9 +17,9 @@ public class Subscription {
     private Long id;
     private LocalDate dueDate;
     private String status;
-//    @ManyToOne(fetch = FetchType.LAZY)
-//    @JoinColumn(name = "plan_id", nullable = false)
-//    private Plan plan;
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "plan_id", nullable = false)
+    private Plan plan;
 //    @OneToOne(fetch = FetchType.LAZY)
 //    @JoinColumn(name = "student_id", nullable = false, unique = true)
 //    private Student student;

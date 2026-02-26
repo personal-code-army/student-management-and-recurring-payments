@@ -21,9 +21,9 @@ public class Payment {
     private LocalDate dueDate;
     private LocalDate paymentDate;
     private String status;
-    //    @ManyToOne(fetch = FetchType.LAZY)
-    //    @JoinColumn(name = "subscription_id", nullable = false)
-    //    private Subscription subscription;
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "subscription_id", nullable = false)
+    private Subscription subscription;
 
 
 }
