@@ -10,6 +10,7 @@ import java.time.LocalDate;
 public record SubscriptionDTO(
         @NotNull @JsonFormat(shape = JsonFormat.Shape.STRING, pattern = "yyyy-MM-dd") LocalDate dueDate,
         @NotBlank(message = "Status não informado") String status,
+        @NotBlank(message = "Forma de pagamento não informada") String PaymentMethod,
         Plan plan
         //Student student
 ) {

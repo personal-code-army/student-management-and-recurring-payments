@@ -30,6 +30,9 @@ public class SubscriptionController {
         Plan plan = planService.findById(subscriptionDTO.getPlan().getId());
         //Student student = studentService.findById(subscriptionDTO.getStudent().getId());
 
+        subscription.setPlan(plan);
+        //subscription.setStudent(student);
+
         return subscriptionService.save(subscription);
     }
 
