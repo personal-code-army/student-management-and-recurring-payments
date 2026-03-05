@@ -29,6 +29,10 @@ public class PaymentService {
         return paymentRepository.findAll();
     }
 
+    public List<Payment> findAllPaymentsSubscription(Long id){
+        return paymentRepository.findAllBySubscriptionId(id);
+    }
+
     public List<Payment> findAllUserPayment(String name) {
         return paymentRepository.findAllBySubscriptionStudentName(name);
     }

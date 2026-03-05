@@ -60,7 +60,6 @@ public class SubscriptionService {
 
         return this.subscriptionRepository.save(subscription);
 
-
     }
 
 
