@@ -8,6 +8,7 @@ import jakarta.validation.ValidationException;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
+import java.time.LocalDate;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
@@ -29,7 +30,7 @@ public class PaymentService {
         return paymentRepository.findAll();
     }
 
-    public List<Payment> findAllPaymentsSubscription(Long id){
+    public List<Payment> findAllPaymentsSubscription(Long id) {
         return paymentRepository.findAllBySubscriptionId(id);
     }
 
@@ -53,8 +54,9 @@ public class PaymentService {
         return this.paymentRepository.save(payment);
     }
 
+    //função para geração de pagamentos recorrentes
     @Transactional
-    public List<Payment> savePaymentSubscription(Subscription subscription) {
+    public List<Payment> saveRecurringPayment(Subscription subscription) {
         int frequency = subscription.getPlan().getFrequency();
         List<Payment> payments = new ArrayList<>();
 
@@ -65,7 +67,7 @@ public class PaymentService {
                 Payment payment = new Payment();
                 payment.setDescription("Assinatura | "
                         + subscription.getPlan() + " | "
-                        + (i+1) + "/" + frequency);
+                        + (i + 1) + "/" + frequency);
                 payment.setValue(subscription.getPlan().getMonthly_amount());
                 payment.setPaymentMethod(subscription.getPaymentMethod());
                 if (i != 0) {
@@ -83,5 +85,22 @@ public class PaymentService {
 
         return payments;
 
+    }
+
+    //função para geração de pagamentos a partir da assinatura do aluno |
+    //Modelo de geração de pagamentos específico do Gelo Team
+    @Transactional
+    public Payment savePaymentSubscription(Subscription subscription) {
+        Payment payment = new Payment();
+        payment.setDescription("Assinatura | "
+                + subscription.getPlan());
+        payment.setValue(subscription.getPlan().getMonthly_amount());
+        payment.setPaymentMethod(subscription.getPaymentMethod());
+        payment.setDueDate(LocalDate.now());
+        payment.setPaymentDate(null);
+        payment.setStatus("A receber");
+        payment.setSubscription(subscription);
+
+        return this.paymentRepository.save(payment);
     }
 }

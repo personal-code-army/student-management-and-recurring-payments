@@ -1,5 +1,6 @@
 package br.com.geloteam.studentmanagement.Services;
 
+import br.com.geloteam.studentmanagement.Models.Payment;
 import br.com.geloteam.studentmanagement.Models.Subscription;
 import br.com.geloteam.studentmanagement.Repositories.SubscriptionRepository;
 import jakarta.transaction.Transactional;
@@ -40,7 +41,27 @@ public class SubscriptionService {
     @Transactional
     public Subscription update(Subscription subscriptions) {
         Subscription subscription = findById(subscriptions.getId());
-        return this.subscriptionRepository.save(subscription);
+
+        subscription.setDueDate(subscriptions.getDueDate());
+        subscription.setStatus(subscriptions.getStatus());
+        subscription.setPaymentMethod(subscriptions.getPaymentMethod());
+        subscription.setPlan(subscriptions.getPlan());
+
+        Subscription savedSubscription = this.subscriptionRepository.save(subscription);
+
+        Payment lastPayment = paymentService.findAllPaymentsSubscription(savedSubscription.getId()).getLast();
+
+        if (lastPayment.getStatus().equals("A receber") || lastPayment.getStatus().equals("Vencido")) {
+            throw new RuntimeException("O aluno possui pagamentos pendentes ou vencidos!");
+        }
+
+        //se for renovação da assinatura, o plano será ativo e irá gerar o pagamento
+        //caso for cancelamento o plano será inativado e não irá gerar pagamento
+        if (savedSubscription.getStatus().equals("Ativo")) {
+            paymentService.savePaymentSubscription(savedSubscription);
+        }
+
+        return savedSubscription;
     }
 
     @Transactional
@@ -56,11 +77,12 @@ public class SubscriptionService {
         //    throw new RuntimeException("O aluno já possui uma assinatura ativa");
         //}
 
-        paymentService.savePaymentSubscription(subscription);
+        Subscription savedSubscription = this.subscriptionRepository.save(subscription);
 
-        return this.subscriptionRepository.save(subscription);
+        paymentService.savePaymentSubscription(savedSubscription);
+
+        return savedSubscription;
 
     }
-
 
 }
