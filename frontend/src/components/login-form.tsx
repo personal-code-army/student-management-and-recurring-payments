@@ -15,10 +15,11 @@ import {
 } from "@/components/ui/field"
 import { Input } from "@/components/ui/input"
 
-export function LoginForm({
-  className,
-  ...props
-}: React.ComponentProps<"div">) {
+interface LoginFormProps extends React.ComponentProps<"div"> {
+  onSwitchTab?: () => void
+}
+
+export function LoginForm({ className, onSwitchTab, ...props }: LoginFormProps) {
   return (
     <div className={cn("flex flex-col gap-6", className)} {...props}>
       <Card>
@@ -29,33 +30,40 @@ export function LoginForm({
           </CardDescription>
         </CardHeader>
         <CardContent>
-          <form>
+          <form onSubmit={(e) => e.preventDefault()}>
             <FieldGroup>
               <Field>
                 <FieldLabel htmlFor="email">Email</FieldLabel>
                 <Input
                   id="email"
                   type="email"
-                  placeholder="m@example.com"
+                  placeholder="felipe@gmail.com"
                   required
                 />
               </Field>
               <Field>
                 <div className="flex items-center">
-                  <FieldLabel htmlFor="password">Password</FieldLabel>
+                  <FieldLabel htmlFor="password">Senha</FieldLabel>
                   <a
                     href="#"
-                    className="ml-auto inline-block text-sm underline-offset-4 hover:underline"
+                    className="ml-auto inline-block text-sm underline-offset-4 hover:underline text-zinc-400"
                   >
                     Esqueceu sua senha?
                   </a>
                 </div>
-                <Input id="password" type="password" required placeholder="********"/>
+                <Input id="password" type="password" required placeholder="********" />
               </Field>
               <Field>
-                <Button type="submit">Login</Button>
-                <FieldDescription className="text-center">
-                  Não tem uma conta? <a href="/cadastro">Criar agora</a>
+                <Button type="submit" className="w-full">Login</Button>
+                <FieldDescription className="text-center mt-4 text-zinc-400">
+                  Não tem uma conta?{" "}
+                  <button 
+                    type="button"
+                    onClick={onSwitchTab}
+                    className="text-[#09090B] underline underline-offset-4 hover:text-[#535353] transition-colors"
+                  >
+                    Criar agora
+                  </button>
                 </FieldDescription>
               </Field>
             </FieldGroup>
