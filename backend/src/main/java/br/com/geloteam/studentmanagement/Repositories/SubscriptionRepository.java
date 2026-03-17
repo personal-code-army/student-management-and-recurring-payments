@@ -9,6 +9,6 @@ import java.util.List;
 @Repository
 public interface SubscriptionRepository extends JpaRepository<Subscription, Long> {
 
-    List<Subscription> findAllBySubscriptionStudentName(String name);
+//    List<Subscription> findAllBySubscriptionStudentName(String name);
 
 }
