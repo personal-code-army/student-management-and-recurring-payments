@@ -1,4 +1,7 @@
 package br.com.geloteam.studentmanagement.Repositories;
 
-public interface StudentRepository {
+import br.com.geloteam.studentmanagement.Models.Student;
+import org.springframework.data.jpa.repository.JpaRepository;
+
+public interface StudentRepository extends JpaRepository<Student, Long> {
 }
