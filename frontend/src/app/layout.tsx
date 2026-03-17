@@ -6,8 +6,8 @@ import "./globals.css";
 const geist = Geist({ subsets: ["latin"] });
 
 export const metadata: Metadata = {
-  title: "Sistema de Corrida",
-  description: "Painel de controle das corridas",
+  title: "Controle de Alunos e Pagamentos ",
+  description: "Painel de controle Gelo Team Chakuriki",
 };
 
 export default function RootLayout({

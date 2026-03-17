@@ -122,3 +122,16 @@
     @apply bg-background text-foreground;
     }
 }
+
+html {
+  scrollbar-gutter: stable !important;
+}
+
+::-webkit-scrollbar {
+  width: 6px;
+}
+
+::-webkit-scrollbar-thumb {
+  background-color: #27272a;
+  border-radius: 10px;
+}
