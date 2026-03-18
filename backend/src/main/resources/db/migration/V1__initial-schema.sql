@@ -51,6 +51,7 @@ CREATE TABLE users
     email            VARCHAR(255) NOT NULL,
     password         VARCHAR(255) NOT NULL,
     cellphone_number VARCHAR(20),
+    role             VARCHAR(50) NOT NULL,
 
     CONSTRAINT fk_users_company
         FOREIGN KEY (company_id)
