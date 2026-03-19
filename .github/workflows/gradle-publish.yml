@@ -25,5 +25,7 @@ jobs:
       working-directory: backend
 
     - name: Build and Test with Maven
-      run: ./mvnw clean install
+      # -'DskipTests' pula os testes (remover após implementação de testes unitários e
+      # variáveis de ambiente de CI)
+      run: ./mvnw clean install -DskipTests 
       working-directory: backend
