@@ -5,7 +5,6 @@ VALUES
     ('98765432000188', 'Academia Extreme', '20040000', 'Av. Rio Branco, 100', 'Rio de Janeiro', '21988887777');
 
 -- 2. Inserir Usuários (Funcionários da Empresa)
--- Assumindo que a primeira empresa terá ID 1 e a segunda ID 2
 INSERT INTO users (company_id, name, email, password, cellphone_number, role)
 VALUES
     (1, 'Admin Gelo', 'admin@geloteam.com', '$2b$10$1xNz0oiMOS8T.zek.hRq6Ow4d0N0tUaIopWjRM9MWp0OZKsKLiOya', '11977776666', 'ADMIN'),
