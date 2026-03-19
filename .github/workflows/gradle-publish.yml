@@ -20,6 +20,10 @@ jobs:
         distribution: 'temurin'
         cache: maven
         
+    - name: Permission for mvnw
+      run: chmod +x mvnw
+      working-directory: backend
+
     - name: Build and Test with Maven
       run: ./mvnw clean install
       working-directory: backend
