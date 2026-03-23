@@ -35,7 +35,7 @@ public class JwtConfig {
         JWK jwk = new OctetSequenceKey.Builder(jwtSecret.getBytes())
                 .algorithm(JWSAlgorithm.HS256)
                 .build();
-        JWKSource<SecurityContext> jwks = new ImmutableJWKSet<>(new JWKSet(jwk));
-        return new NimbusJwtEncoder(jwks);
+        JWKSource<SecurityContext> swaps = new ImmutableJWKSet<>(new JWKSet(jwk));
+        return new NimbusJwtEncoder(swaps);
     }
 }
