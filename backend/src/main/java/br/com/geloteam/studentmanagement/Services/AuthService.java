@@ -5,9 +5,10 @@ import br.com.geloteam.studentmanagement.DTO.LoginResponseDTO;
 import br.com.geloteam.studentmanagement.DTO.UserResponseDTO;
 import br.com.geloteam.studentmanagement.Models.User;
 import br.com.geloteam.studentmanagement.Repositories.UserRepository;
-import org.jspecify.annotations.NonNull;
+import org.jspecify.annotations.NullMarked;
 import org.springframework.context.annotation.Lazy;
 import org.springframework.security.authentication.AuthenticationManager;
+import org.springframework.security.authentication.BadCredentialsException;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.userdetails.UserDetails;
@@ -16,6 +17,7 @@ import org.springframework.security.core.userdetails.UsernameNotFoundException;
 import org.springframework.stereotype.Service;
 
 @Service
+@NullMarked
 public class AuthService implements UserDetailsService {
 
     private final UserRepository userRepository;
@@ -31,22 +33,24 @@ public class AuthService implements UserDetailsService {
     }
 
     @Override
-    public UserDetails loadUserByUsername(@NonNull String email) throws UsernameNotFoundException {
+    public UserDetails loadUserByUsername(String email) throws UsernameNotFoundException {
         return userRepository.findByEmail(email)
-                .orElseThrow(() -> new UsernameNotFoundException("User not found: " + email));
+                .orElseThrow(() -> new UsernameNotFoundException("User not found with email"));
     }
 
     public LoginResponseDTO login(LoginRequestDTO data) {
-        var usernamePassword = new UsernamePasswordAuthenticationToken(data.email(), data.password());
-        var auth = authenticationManager.authenticate(usernamePassword);
+        var authenticationToken = new UsernamePasswordAuthenticationToken(data.email(), data.password());
+        var auth = authenticationManager.authenticate(authenticationToken);
 
-        String token = tokenService.generateToken(auth);
-
-        return new LoginResponseDTO(token, TokenService.EXPIRY_SECONDS);
+        return tokenService.generateLoginResponse(auth);
     }
 
     public UserResponseDTO me(Authentication authentication) {
-        var user = (User) loadUserByUsername(authentication.getName());
+        if (!authentication.isAuthenticated()) {
+            throw new BadCredentialsException("User is not authenticated");
+        }
+
+        User user = (User) loadUserByUsername(authentication.getName());
         return new UserResponseDTO(user);
     }
 }
