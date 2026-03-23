@@ -1,0 +1,31 @@
+name: Java CI com Maven
+
+on:
+  push:
+    branches: [ "main", "master" ]
+  pull_request:
+    branches: [ "main", "master" ]
+    
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+    - name: Checkout do código
+      uses: actions/checkout@v4
+      
+    - name: Set up JDK 21
+      uses: actions/setup-java@v4
+      with:
+        java-version: '21'
+        distribution: 'temurin'
+        cache: maven
+        
+    - name: Permission for mvnw
+      run: chmod +x mvnw
+      working-directory: backend
+
+    - name: Build and Test with Maven
+      # -'DskipTests' pula os testes (remover após implementação de testes unitários e
+      # variáveis de ambiente de CI)
+      run: ./mvnw clean install -DskipTests 
+      working-directory: backend

@@ -27,9 +27,9 @@ public class PlanService {
         return planRepository.findAll();
     }
 
-    public List<Plan> findAllUserPlan(String name) {
-        return planRepository.findAllBySubscriptionStudentName(name);
-    }
+//    public List<Plan> findAllUserPlan(String name) {
+//        return planRepository.findAllBySubscriptionStudentName(name);
+//    }
 
     @Transactional
     public Plan update(Plan plans){

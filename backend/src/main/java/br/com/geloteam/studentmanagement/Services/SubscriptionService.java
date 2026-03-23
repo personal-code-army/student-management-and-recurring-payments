@@ -34,15 +34,15 @@ public class SubscriptionService {
         return subscriptionRepository.findAll();
     }
 
-    public List<Subscription> findAllUserSubscription(String name) {
-        return subscriptionRepository.findAllBySubscriptionStudentName(name);
-    }
+//    public List<Subscription> findAllUserSubscription(String name) {
+//        return subscriptionRepository.findAllBySubscriptionStudentName(name);
+//    }
 
     @Transactional
     public Subscription update(Subscription subscriptions) {
         Subscription subscription = findById(subscriptions.getId());
 
-        subscription.setDueDate(subscriptions.getDueDate());
+        subscription.setStartDate(subscriptions.getStartDate());
         subscription.setStatus(subscriptions.getStatus());
         subscription.setPaymentMethod(subscriptions.getPaymentMethod());
         subscription.setPlan(subscriptions.getPlan());

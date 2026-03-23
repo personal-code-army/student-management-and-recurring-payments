@@ -34,10 +34,11 @@ public class PaymentService {
         return paymentRepository.findAllBySubscriptionId(id);
     }
 
-    public List<Payment> findAllUserPayment(String name) {
-        return paymentRepository.findAllBySubscriptionStudentName(name);
-    }
+//    public List<Payment> findAllUserPayment(String name) {
+//        return paymentRepository.findAllBySubscriptionStudentName(name);
+//    }
 
+    // verificar se está realmente editando os dados
     @Transactional
     public Payment update(Payment payments) {
         Payment payment = findById(payments.getId());
@@ -54,7 +55,7 @@ public class PaymentService {
         return this.paymentRepository.save(payment);
     }
 
-    //função para geração de pagamentos recorrentes
+    // função para geração de pagamentos recorrentes
     @Transactional
     public List<Payment> saveRecurringPayment(Subscription subscription) {
         int frequency = subscription.getPlan().getFrequency();
@@ -68,14 +69,14 @@ public class PaymentService {
                 payment.setDescription("Assinatura | "
                         + subscription.getPlan() + " | "
                         + (i + 1) + "/" + frequency);
-                payment.setValue(subscription.getPlan().getMonthly_amount());
+                payment.setValue(subscription.getPlan().getMonthlyAmount());
                 payment.setPaymentMethod(subscription.getPaymentMethod());
                 if (i != 0) {
-                    payment.setDueDate(subscription.getDueDate().plusMonths(i));
+                    payment.setDueDate(subscription.getStartDate().plusMonths(i));
                 } else {
-                    payment.setDueDate(subscription.getDueDate());
+                    payment.setDueDate(subscription.getStartDate());
                 }
-                payment.setPaymentDate(null);
+                payment.setIssueDate(null);
                 payment.setStatus("A receber");
                 payment.setSubscription(subscription);
 
@@ -87,17 +88,17 @@ public class PaymentService {
 
     }
 
-    //função para geração de pagamentos a partir da assinatura do aluno |
-    //Modelo de geração de pagamentos específico do Gelo Team
+//    função para geração de pagamentos a partir da assinatura do aluno |
+//    Modelo de geração de pagamentos específico do Gelo Team
     @Transactional
     public Payment savePaymentSubscription(Subscription subscription) {
         Payment payment = new Payment();
         payment.setDescription("Assinatura | "
                 + subscription.getPlan());
-        payment.setValue(subscription.getPlan().getMonthly_amount());
+        payment.setValue(subscription.getPlan().getMonthlyAmount());
         payment.setPaymentMethod(subscription.getPaymentMethod());
         payment.setDueDate(LocalDate.now());
-        payment.setPaymentDate(null);
+        payment.setIssueDate(null);
         payment.setStatus("A receber");
         payment.setSubscription(subscription);
 
