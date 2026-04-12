@@ -34,9 +34,9 @@ public class PaymentService {
         return paymentRepository.findAllBySubscriptionId(id);
     }
 
-//    public List<Payment> findAllUserPayment(String name) {
-//        return paymentRepository.findAllBySubscriptionStudentName(name);
-//    }
+    public List<Payment> findAllUserPayment(String name) {
+        return paymentRepository.findAllBySubscriptionStudentName(name);
+    }
 
     // verificar se está realmente editando os dados
     @Transactional
@@ -67,7 +67,7 @@ public class PaymentService {
             for (int i = 0; i < frequency; i++) {
                 Payment payment = new Payment();
                 payment.setDescription("Assinatura | "
-                        + subscription.getPlan() + " | "
+                        + subscription.getPlan().getName() + " | "
                         + (i + 1) + "/" + frequency);
                 payment.setValue(subscription.getPlan().getMonthlyAmount());
                 payment.setPaymentMethod(subscription.getPaymentMethod());
@@ -94,7 +94,7 @@ public class PaymentService {
     public Payment savePaymentSubscription(Subscription subscription) {
         Payment payment = new Payment();
         payment.setDescription("Assinatura | "
-                + subscription.getPlan());
+                + subscription.getPlan().getName());
         payment.setValue(subscription.getPlan().getMonthlyAmount());
         payment.setPaymentMethod(subscription.getPaymentMethod());
         payment.setDueDate(LocalDate.now());

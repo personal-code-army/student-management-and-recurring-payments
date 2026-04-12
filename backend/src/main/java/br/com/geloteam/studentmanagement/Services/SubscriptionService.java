@@ -1,6 +1,7 @@
 package br.com.geloteam.studentmanagement.Services;
 
 import br.com.geloteam.studentmanagement.Models.Payment;
+import br.com.geloteam.studentmanagement.Models.Student;
 import br.com.geloteam.studentmanagement.Models.Subscription;
 import br.com.geloteam.studentmanagement.Repositories.SubscriptionRepository;
 import jakarta.transaction.Transactional;
@@ -20,8 +21,8 @@ public class SubscriptionService {
     @Autowired
     PaymentService paymentService;
 
-    //@Autowired
-    //StudentService studentService;
+    @Autowired
+    StudentService studentService;
 
     public Subscription findById(Long id) {
         Optional<Subscription> subscription = this.subscriptionRepository.findById(id);
@@ -34,9 +35,9 @@ public class SubscriptionService {
         return subscriptionRepository.findAll();
     }
 
-//    public List<Subscription> findAllUserSubscription(String name) {
-//        return subscriptionRepository.findAllBySubscriptionStudentName(name);
-//    }
+    public List<Subscription> findAllUserSubscription(String name) {
+        return subscriptionRepository.findAllByStudentName(name);
+    }
 
     @Transactional
     public Subscription update(Subscription subscriptions) {
@@ -71,11 +72,10 @@ public class SubscriptionService {
 
     @Transactional
     public Subscription save(Subscription subscription) {
-        //Student student = studentService.findById(subscription.getStudent().getId());
-        //if (studentService.getAllSubscription(student).size() >= 1
-        //        && studentService.getSubscription = "Ativo") {
-        //    throw new RuntimeException("O aluno já possui uma assinatura ativa");
-        //}
+        Student student = studentService.findById(subscription.getStudent().getId());
+        if (!subscriptionRepository.existsByStudentIdAndStatus(student.getId(), "ATIVO")) {
+            throw new RuntimeException("O aluno já possui uma assinatura ativa");
+        }
 
         Subscription savedSubscription = this.subscriptionRepository.save(subscription);
 
