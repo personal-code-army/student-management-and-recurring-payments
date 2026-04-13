@@ -1,12 +1,17 @@
 package br.com.geloteam.studentmanagement.Services;
 
-import br.com.geloteam.studentmanagement.DTO.LoginRequestDTO;
-import br.com.geloteam.studentmanagement.DTO.LoginResponseDTO;
-import br.com.geloteam.studentmanagement.DTO.UserResponseDTO;
+import br.com.geloteam.studentmanagement.DTO.auth.LoginRequestDTO;
+import br.com.geloteam.studentmanagement.DTO.auth.LoginResponseDTO;
+import br.com.geloteam.studentmanagement.DTO.auth.RegisterRequestDTO;
+import br.com.geloteam.studentmanagement.DTO.auth.RegisterResponseDTO;
+import br.com.geloteam.studentmanagement.Models.Company;
 import br.com.geloteam.studentmanagement.Models.User;
+import br.com.geloteam.studentmanagement.Models.UserRole;
 import br.com.geloteam.studentmanagement.Repositories.UserRepository;
+import jakarta.transaction.Transactional;
 import org.jspecify.annotations.NullMarked;
 import org.springframework.context.annotation.Lazy;
+import org.springframework.http.HttpStatus;
 import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.authentication.BadCredentialsException;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
@@ -14,28 +19,39 @@ import org.springframework.security.core.Authentication;
 import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.security.core.userdetails.UserDetailsService;
 import org.springframework.security.core.userdetails.UsernameNotFoundException;
+import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
+import org.springframework.web.server.ResponseStatusException;
+
+import java.util.Objects;
 
 @Service
-@NullMarked
 public class AuthService implements UserDetailsService {
 
-    private final UserRepository userRepository;
+    private final CompanyService companyService;
+    private final UserRepository userRepository; // usar a logica no service aqui e chamar o repository la
     private final AuthenticationManager authenticationManager;
     private final TokenService tokenService;
+    private final PasswordEncoder passwordEncoder;
 
     public AuthService(UserRepository userRepository,
+
                        @Lazy AuthenticationManager authenticationManager,
-                       TokenService tokenService) {
+                       CompanyService companyService,
+                       TokenService tokenService,
+                       PasswordEncoder passwordEncoder) {
         this.userRepository = userRepository;
         this.authenticationManager = authenticationManager;
+        this.companyService = companyService;
         this.tokenService = tokenService;
+        this.passwordEncoder = passwordEncoder;
     }
 
     @Override
+    @NullMarked
     public UserDetails loadUserByUsername(String email) throws UsernameNotFoundException {
-        return userRepository.findByEmail(email)
-                .orElseThrow(() -> new UsernameNotFoundException("User not found with email"));
+        return userRepository.findUserByEmail(email)
+                .orElseThrow(() -> new UsernameNotFoundException("User not found with email: "));
     }
 
     public LoginResponseDTO login(LoginRequestDTO data) {
@@ -45,12 +61,38 @@ public class AuthService implements UserDetailsService {
         return tokenService.generateLoginResponse(auth);
     }
 
-    public UserResponseDTO me(Authentication authentication) {
+    @Transactional
+    public RegisterResponseDTO register(RegisterRequestDTO data) {
+        if (userRepository.findUserByEmail(data.email()).isPresent()) {
+            throw new ResponseStatusException(HttpStatus.CONFLICT, "E-mail already exists!");
+        }
+
+        if (data.password() == null || data.password().isBlank()) {
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Password cannot be empty!");
+        }
+
+        String encryptedPassword = passwordEncoder.encode(data.password());
+
+        Company company = companyService.findById(data.companyId());
+
+        User user = new User();
+        user.setName(data.name());
+        user.setEmail(data.email());
+        user.setPassword(Objects.requireNonNull(encryptedPassword));
+        user.setCompany(company);
+        user.setRole(UserRole.USER); // USER is default
+
+        User savedUser = userRepository.save(user);
+
+        return new RegisterResponseDTO(savedUser);
+    }
+
+    public RegisterResponseDTO me(Authentication authentication) {
         if (!authentication.isAuthenticated()) {
             throw new BadCredentialsException("User is not authenticated");
         }
 
         User user = (User) loadUserByUsername(authentication.getName());
-        return new UserResponseDTO(user);
+        return new RegisterResponseDTO(user);
     }
 }

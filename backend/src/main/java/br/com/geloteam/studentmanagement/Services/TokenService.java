@@ -1,6 +1,6 @@
 package br.com.geloteam.studentmanagement.Services;
 
-import br.com.geloteam.studentmanagement.DTO.LoginResponseDTO;
+import br.com.geloteam.studentmanagement.DTO.auth.LoginResponseDTO;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.GrantedAuthority;
 import org.springframework.security.oauth2.jose.jws.MacAlgorithm;
@@ -13,7 +13,6 @@ import java.util.stream.Collectors;
 
 @Service
 public class TokenService {
-
 
     private final JwtEncoder jwtEncoder;
     public static final long EXPIRY_SECONDS = 3600L;
