@@ -1,11 +1,11 @@
 package br.com.geloteam.studentmanagement.Controllers;
 
 import br.com.geloteam.studentmanagement.DTO.SubscriptionDTO;
-import br.com.geloteam.studentmanagement.Models.Payment;
 import br.com.geloteam.studentmanagement.Models.Plan;
+import br.com.geloteam.studentmanagement.Models.Student;
 import br.com.geloteam.studentmanagement.Models.Subscription;
-import br.com.geloteam.studentmanagement.Services.PaymentService;
 import br.com.geloteam.studentmanagement.Services.PlanService;
+import br.com.geloteam.studentmanagement.Services.StudentService;
 import br.com.geloteam.studentmanagement.Services.SubscriptionService;
 import jakarta.validation.Valid;
 import org.springframework.beans.BeanUtils;
@@ -24,16 +24,19 @@ public class SubscriptionController {
     @Autowired
     PlanService planService;
 
+    @Autowired
+    StudentService studentService;
+
     @PostMapping("/subscription")
     public Subscription saveSubscription(@RequestBody @Valid SubscriptionDTO subscriptionDTO) {
         var subscription = new Subscription();
         BeanUtils.copyProperties(subscriptionDTO, subscription);
 
-        Plan plan = planService.findById(subscriptionDTO.getPlan().getId());
-        //Student student = studentService.findById(subscriptionDTO.getStudent().getId());
+        Plan plan = planService.findById(subscriptionDTO.getPlanId());
+        Student student = studentService.findById(subscriptionDTO.getStudentId());
 
         subscription.setPlan(plan);
-        //subscription.setStudent(student);
+        subscription.setStudent(student);
 
         return subscriptionService.save(subscription);
     }
