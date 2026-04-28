@@ -19,11 +19,11 @@ VALUES
     (2, 'Plano Musculação', 110.00, 1);
 
 -- 4. Inserir Estudantes/Alunos
-INSERT INTO students (plan_id, cpf, active)
+INSERT INTO students (plan_id, name, cpf, active)
 VALUES
-    (1, '12345678901', true),
-    (2, '98765432100', true),
-    (3, '11122233344', false);
+    (1, 'Nome 1', '12345678901', true),
+    (2, 'Nome 2','98765432100', true),
+    (3, 'Nome 3','11122233344', false);
 
 -- 5. Inserir Assinaturas (Subscriptions)
 INSERT INTO subscriptions (student_id, plan_id, start_date, status, payment_method)
