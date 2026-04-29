@@ -35,30 +35,24 @@ class UserServiceTest {
     @Test
     @DisplayName("Should return all users mapped to DTOs")
     void findAllUsersShouldReturnDtoList() {
-        // Arrange
-        // 1. Criamos uma empresa fictícia para satisfazer a dependência do DTO
         Company company = new Company();
         company.setId(1L);
 
-        // 2. Criamos os usuários e associamos a empresa a cada um deles
         User user1 = new User();
         user1.setName("Vitor");
-        user1.setCompany(company); // Essencial para evitar o NPE
+        user1.setCompany(company);
 
         User user2 = new User();
         user2.setName("John");
-        user2.setCompany(company); // Essencial para evitar o NPE
+        user2.setCompany(company);
 
         when(userRepository.findAll()).thenReturn(List.of(user1, user2));
 
-        // Act
         List<RegisterResponseDTO> result = userService.findAllUsers();
 
-        // Assert
         assertNotNull(result);
         assertEquals(2, result.size());
-        // Verificamos se o ID mapeado no DTO é o mesmo da empresa que criamos
-        assertEquals(1L, result.get(0).companyId());
+        assertEquals(1L, result.getFirst().companyId());
 
         verify(userRepository, times(1)).findAll();
     }
@@ -66,7 +60,6 @@ class UserServiceTest {
     @Test
     @DisplayName("Should update user successfully when ID exists")
     void updateShouldReturnUpdatedUserDtoWhenIdExists() {
-        // Arrange
         Long userId = 1L;
         Long companyId = 10L;
         UpdateUserDTO dto = new UpdateUserDTO("Vitor Gonzalez", "11999999999", companyId);
@@ -81,10 +74,8 @@ class UserServiceTest {
         when(companyService.findById(companyId)).thenReturn(company);
         when(userRepository.save(any(User.class))).thenAnswer(invocation -> invocation.getArgument(0));
 
-        // Act
         RegisterResponseDTO result = userService.update(userId, dto);
 
-        // Assert
         assertNotNull(result);
         assertEquals("Vitor Gonzalez", existingUser.getName());
         assertEquals(company, existingUser.getCompany());
@@ -94,12 +85,10 @@ class UserServiceTest {
     @Test
     @DisplayName("Should throw UsernameNotFoundException when updating non-existent user")
     void updateShouldThrowExceptionWhenUserNotFound() {
-        // Arrange
         Long userId = 1L;
         UpdateUserDTO dto = new UpdateUserDTO("Name", "123", 10L);
         when(userRepository.findById(userId)).thenReturn(Optional.empty());
 
-        // Act & Assert
         assertThrows(UsernameNotFoundException.class, () -> userService.update(userId, dto));
         verify(userRepository, never()).save(any());
         verify(companyService, never()).findById(any());
@@ -108,21 +97,18 @@ class UserServiceTest {
     @Test
     @DisplayName("Should delete user and return DTO when ID exists")
     void deleteShouldRemoveUserAndReturnDto() {
-        // Arrange
         Company company = new Company();
-        company.setId(10L); // Dado obrigatório para o DTO
+        company.setId(10L);
 
         User user = new User();
         user.setId(1L);
         user.setName("Vitor");
-        user.setCompany(company); // Garantindo a integridade do objeto
+        user.setCompany(company);
 
         when(userRepository.findById(1L)).thenReturn(Optional.of(user));
 
-        // Act
         RegisterResponseDTO result = userService.delete(1L);
 
-        // Assert
         assertNotNull(result);
         assertEquals(10L, result.companyId());
         verify(userRepository, times(1)).delete(user);
