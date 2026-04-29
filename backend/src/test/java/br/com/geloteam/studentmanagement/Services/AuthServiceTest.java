@@ -68,9 +68,7 @@ public class AuthServiceTest {
     void shouldThrowExceptionWhenUserNotFound() {
         when(userRepository.findUserByEmail(EMAIL)).thenReturn(Optional.empty());
 
-        assertThrows(UsernameNotFoundException.class, () -> {
-            authService.loadUserByUsername(EMAIL);
-        });
+        assertThrows(UsernameNotFoundException.class, () -> authService.loadUserByUsername(EMAIL));
     }
 
     @Test
@@ -106,9 +104,7 @@ public class AuthServiceTest {
         when(authenticationManager.authenticate(any(UsernamePasswordAuthenticationToken.class)))
                 .thenThrow(new BadCredentialsException("Invalid user or password"));
 
-        assertThrows(BadCredentialsException.class, () -> {
-            authService.login(loginRequest);
-        });
+        assertThrows(BadCredentialsException.class, () -> authService.login(loginRequest));
 
         verifyNoInteractions(tokenService);
     }
@@ -143,9 +139,7 @@ public class AuthServiceTest {
         RegisterRequestDTO request = new RegisterRequestDTO("Vitor", "vitor@email.com", "123", "11999999999", 1L);
         when(userRepository.findUserByEmail(request.email())).thenReturn(Optional.of(new User()));
 
-        ResponseStatusException exception = assertThrows(ResponseStatusException.class, () -> {
-            authService.register(request);
-        });
+        ResponseStatusException exception = assertThrows(ResponseStatusException.class, () -> authService.register(request));
 
         assertEquals(HttpStatus.CONFLICT, exception.getStatusCode());
         assertEquals("E-mail already exists!", exception.getReason());
@@ -182,8 +176,6 @@ public class AuthServiceTest {
         Authentication authMock = mock(Authentication.class);
         when(authMock.isAuthenticated()).thenReturn(false);
 
-        assertThrows(BadCredentialsException.class, () -> {
-            authService.me(authMock);
-        });
+        assertThrows(BadCredentialsException.class, () -> authService.me(authMock));
     }
 }
