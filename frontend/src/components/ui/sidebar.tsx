@@ -2,7 +2,6 @@
 
 import * as React from "react"
 import { cva, type VariantProps } from "class-variance-authority"
-import { PanelLeftIcon } from "lucide-react"
 import { Slot } from "radix-ui"
 
 import { useIsMobile } from "@/hooks/use-mobile"
@@ -218,7 +217,7 @@ function Sidebar({
       <div
         data-slot="sidebar-gap"
         className={cn(
-          "relative w-(--sidebar-width) bg-transparent transition-[width] duration-200 ease-linear",
+          "relative w-(--sidebar-width) bg-transparent transition-[width,transform] duration-500 ease-[cubic-bezier(0.22,1,0.36,1)]",
           "group-data-[collapsible=offcanvas]:w-0",
           "group-data-[side=right]:rotate-180",
           variant === "floating" || variant === "inset"
@@ -229,7 +228,8 @@ function Sidebar({
       <div
         data-slot="sidebar-container"
         className={cn(
-          "fixed inset-y-0 z-10 hidden h-svh w-(--sidebar-width) transition-[left,right,width] duration-200 ease-linear md:flex",
+          "fixed inset-y-0 z-10 hidden h-svh w-(--sidebar-width) will-change-transform transition-[left,right,width,opacity,transform] duration-500 ease-[cubic-bezier(0.22,1,0.36,1)] md:flex",
+          "opacity-100 translate-x-0 group-data-[collapsible=offcanvas]:opacity-0 group-data-[collapsible=offcanvas]:pointer-events-none",
           side === "left"
             ? "left-0 group-data-[collapsible=offcanvas]:left-[calc(var(--sidebar-width)*-1)]"
             : "right-0 group-data-[collapsible=offcanvas]:right-[calc(var(--sidebar-width)*-1)]",
@@ -258,22 +258,46 @@ function SidebarTrigger({
   onClick,
   ...props
 }: React.ComponentProps<typeof Button>) {
-  const { toggleSidebar } = useSidebar()
+  const { toggleSidebar, state } = useSidebar()
+  const isCollapsed = state === "collapsed"
 
   return (
     <Button
       data-sidebar="trigger"
       data-slot="sidebar-trigger"
       variant="ghost"
-      size="icon"
-      className={cn("size-7", className)}
+      size="default"
+      className={cn(
+        "group relative h-9 rounded-full border border-[#FFFFFF]/25 bg-[#020203] px-3 text-[#FFFFFF] transition-all duration-300 hover:border-[#DD050A]/50 hover:text-[#DD050A]",
+        className
+      )}
       onClick={(event) => {
         onClick?.(event)
         toggleSidebar()
       }}
       {...props}
     >
-      <PanelLeftIcon />
+      <span className="mr-2 text-[10px] font-semibold tracking-[0.2em]">NAV</span>
+      <span className="relative flex h-3.5 w-4.5 items-center justify-center">
+        <span
+          className={cn(
+            "absolute h-0.5 rounded-full bg-current transition-all duration-300",
+            isCollapsed ? "w-4.5 rotate-45" : "w-4.5 -translate-y-1"
+          )}
+        />
+        <span
+          className={cn(
+            "absolute h-0.5 rounded-full bg-current transition-all duration-300",
+            isCollapsed ? "w-4.5 opacity-0" : "w-3"
+          )}
+        />
+        <span
+          className={cn(
+            "absolute h-0.5 rounded-full bg-current transition-all duration-300",
+            isCollapsed ? "w-4.5 -rotate-45" : "w-4.5 translate-y-1"
+          )}
+        />
+      </span>
       <span className="sr-only">Toggle Sidebar</span>
     </Button>
   )
@@ -291,7 +315,7 @@ function SidebarRail({ className, ...props }: React.ComponentProps<"button">) {
       onClick={toggleSidebar}
       title="Toggle Sidebar"
       className={cn(
-        "absolute inset-y-0 z-20 hidden w-4 -translate-x-1/2 transition-all ease-linear group-data-[side=left]:-right-4 group-data-[side=right]:left-0 after:absolute after:inset-y-0 after:left-1/2 after:w-[2px] hover:after:bg-sidebar-border sm:flex",
+        "absolute inset-y-0 z-20 hidden w-4 -translate-x-1/2 transition-all duration-300 ease-[cubic-bezier(0.22,1,0.36,1)] group-data-[side=left]:-right-4 group-data-[side=right]:left-0 after:absolute after:inset-y-0 after:left-1/2 after:w-0.5 hover:after:bg-sidebar-border sm:flex",
         "in-data-[side=left]:cursor-w-resize in-data-[side=right]:cursor-e-resize",
         "[[data-side=left][data-state=collapsed]_&]:cursor-e-resize [[data-side=right][data-state=collapsed]_&]:cursor-w-resize",
         "group-data-[collapsible=offcanvas]:translate-x-0 group-data-[collapsible=offcanvas]:after:left-full hover:group-data-[collapsible=offcanvas]:bg-sidebar",

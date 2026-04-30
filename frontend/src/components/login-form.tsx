@@ -15,47 +15,62 @@ import {
 } from "@/components/ui/field"
 import { Input } from "@/components/ui/input"
 
-export function LoginForm({
-  className,
-  ...props
-}: React.ComponentProps<"div">) {
+interface LoginFormProps extends React.ComponentProps<"div"> {
+  onSwitchTab?: () => void
+}
+
+export function LoginForm({ className, onSwitchTab, ...props }: LoginFormProps) {
   return (
     <div className={cn("flex flex-col gap-6", className)} {...props}>
-      <Card>
+      <Card className="border border-[#FFFFFF]/15 bg-[#020203]/90 text-[#FFFFFF] shadow-[0_20px_60px_rgba(0,0,0,0.5)] backdrop-blur">
         <CardHeader>
-          <CardTitle>Faça login</CardTitle>
+          <CardTitle className="text-2xl text-[#FFFFFF]">Faça login</CardTitle>
           <CardDescription>
             Insira seu e-mail abaixo para acessar sua conta.
           </CardDescription>
         </CardHeader>
         <CardContent>
-          <form>
+          <form onSubmit={(e) => e.preventDefault()}>
             <FieldGroup>
               <Field>
-                <FieldLabel htmlFor="email">Email</FieldLabel>
+                <FieldLabel htmlFor="email" className="text-[#FFFFFF]">Email</FieldLabel>
                 <Input
                   id="email"
                   type="email"
-                  placeholder="m@example.com"
+                  placeholder="felipe@gmail.com"
+                  className="border-[#FFFFFF]/20 bg-[#000000] text-[#FFFFFF] placeholder:text-[#FFFFFF]/40 focus-visible:border-[#DD050A]"
                   required
                 />
               </Field>
               <Field>
                 <div className="flex items-center">
-                  <FieldLabel htmlFor="password">Password</FieldLabel>
+                  <FieldLabel htmlFor="password" className="text-[#FFFFFF]">Senha</FieldLabel>
                   <a
                     href="#"
-                    className="ml-auto inline-block text-sm underline-offset-4 hover:underline"
+                    className="ml-auto inline-block text-sm text-[#FFFFFF]/70 underline-offset-4 hover:text-[#FFFFFF] hover:underline"
                   >
                     Esqueceu sua senha?
                   </a>
                 </div>
-                <Input id="password" type="password" required placeholder="********"/>
+                <Input
+                  id="password"
+                  type="password"
+                  required
+                  placeholder="********"
+                  className="border-[#FFFFFF]/20 bg-[#000000] text-[#FFFFFF] placeholder:text-[#FFFFFF]/40 focus-visible:border-[#DD050A]"
+                />
               </Field>
               <Field>
-                <Button type="submit">Login</Button>
-                <FieldDescription className="text-center">
-                  Não tem uma conta? <a href="/cadastro">Criar agora</a>
+                <Button type="submit" className="w-full bg-[#DD050A] text-[#FFFFFF] hover:bg-[#DD050A]/90">Login</Button>
+                <FieldDescription className="mt-4 text-center text-[#FFFFFF]/70">
+                  Não tem uma conta?{" "}
+                  <button
+                    type="button"
+                    onClick={onSwitchTab}
+                    className="text-[#FFFFFF] underline underline-offset-4 transition-colors hover:text-[#DD050A]"
+                  >
+                    Criar agora
+                  </button>
                 </FieldDescription>
               </Field>
             </FieldGroup>
