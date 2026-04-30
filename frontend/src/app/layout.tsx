@@ -7,7 +7,7 @@ const geist = Geist({ subsets: ["latin"] });
 
 export const metadata: Metadata = {
   title: "Sistema de Corrida",
-  description: "Painel de controle das corridas",
+  description: "Gestão de planos e alunos",
 };
 
 export default function RootLayout({
