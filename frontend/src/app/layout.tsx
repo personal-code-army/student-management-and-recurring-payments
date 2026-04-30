@@ -6,7 +6,7 @@ import "./globals.css";
 const geist = Geist({ subsets: ["latin"] });
 
 export const metadata: Metadata = {
-  title: "Sistema de Corrida",
+  title: "Gelo Team Chakuriki",
   description: "Gestão de planos e alunos",
 };
 
