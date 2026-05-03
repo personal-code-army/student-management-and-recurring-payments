@@ -3,6 +3,8 @@ package br.com.geloteam.studentmanagement.Services;
 import br.com.geloteam.studentmanagement.Models.Payment;
 import br.com.geloteam.studentmanagement.Models.Subscription;
 import br.com.geloteam.studentmanagement.Repositories.PaymentRepository;
+import br.com.geloteam.studentmanagement.exception.EntityIdNotExistsOrDelete;
+import br.com.geloteam.studentmanagement.exception.EntityNotFound;
 import jakarta.transaction.Transactional;
 import jakarta.validation.ValidationException;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -21,7 +23,7 @@ public class PaymentService {
 
     public Payment findById(Long id) {
         Optional<Payment> payment = this.paymentRepository.findById(id);
-        return payment.orElseThrow(() -> new ValidationException(
+        return payment.orElseThrow(() -> new EntityNotFound(
                 "Pagamento não encontrado"
         ));
     }
@@ -47,6 +49,9 @@ public class PaymentService {
 
     @Transactional
     public void delete(long id) {
+        if(!paymentRepository.existsById(id)){
+            throw new EntityIdNotExistsOrDelete("O pagamento não existe ou já foi excluso!");
+        }
         paymentRepository.deleteById(id);
     }
 

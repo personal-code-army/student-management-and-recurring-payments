@@ -5,6 +5,7 @@ import br.com.geloteam.studentmanagement.DTO.auth.RegisterResponseDTO;
 import br.com.geloteam.studentmanagement.Models.Company;
 import br.com.geloteam.studentmanagement.Models.User;
 import br.com.geloteam.studentmanagement.Repositories.UserRepository;
+import br.com.geloteam.studentmanagement.exception.EntityNotFound;
 import jakarta.transaction.Transactional;
 import org.springframework.security.core.userdetails.UsernameNotFoundException;
 import org.springframework.stereotype.Service;
@@ -33,7 +34,7 @@ public class UserService {
     @Transactional
     public RegisterResponseDTO update(Long id, UpdateUserDTO data) {
         User user = userRepository.findById(id).orElseThrow(
-                () -> new UsernameNotFoundException("User not found"));
+                () -> new EntityNotFound("Usuario não encontrado"));
 
         user.setName(data.name());
         user.setCellphoneNumber(data.cellphoneNumber());
