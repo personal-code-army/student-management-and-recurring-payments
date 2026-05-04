@@ -16,13 +16,13 @@ import {
 
 const navItems = [
   { title: "Dashboard", url: "/dashboard", icon: LayoutDashboard },
-  { title: "Recebimentos", url: "/dashboard/recebimentos", icon: DollarSign },
-  { title: "Alunos", url: "/dashboard/alunos", icon: Users },
-  { title: "Planos", url: "/dashboard/planos", icon: Box },
+  { title: "Recebimentos", url: "/recebimentos", icon: DollarSign },
+  { title: "Alunos", url: "/alunos", icon: Users },
+  { title: "Planos", url: "/planos", icon: Box },
 ]
 
 const bottomItems = [
-  { title: "Configurações", url: "/dashboard/configuracoes", icon: Settings },
+  { title: "Configurações", url: "/configuracoes", icon: Settings },
 ]
 
 export function AppSidebar() {
