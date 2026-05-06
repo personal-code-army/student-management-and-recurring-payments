@@ -1,4 +1,7 @@
+import { useState, type ComponentProps, type FormEvent } from "react"
+import axios from "axios"
 import { Button } from "@/components/ui/button"
+import { api } from "@/lib/api"
 import {
   Card,
   CardContent,
@@ -14,11 +17,48 @@ import {
 } from "@/components/ui/field"
 import { Input } from "@/components/ui/input"
 
-interface SignupFormProps extends React.ComponentProps<typeof Card> {
+interface SignupFormProps extends ComponentProps<typeof Card> {
   onSwitchTab?: () => void
 }
 
 export function SignupForm({ onSwitchTab, ...props }: SignupFormProps) {
+  const [name, setName] = useState("")
+  const [email, setEmail] = useState("")
+  const [password, setPassword] = useState("")
+  const [cellphoneNumber, setCellphoneNumber] = useState("")
+  const [companyId] = useState("2")
+  const [role] = useState("user")
+  const [status, setStatus] = useState<"idle" | "loading" | "success" | "error">("idle")
+  const [message, setMessage] = useState("")
+
+  const handleSubmit = async (event: FormEvent<HTMLFormElement>) => {
+    event.preventDefault()
+    setMessage("")
+
+    setStatus("loading")
+
+    try {
+      await api.post("/api/auth/register", {
+        name,
+        email,
+        password,
+        cellphoneNumber,
+        companyId,
+        role,
+      })
+
+      setStatus("success")
+      setMessage("Conta criada com sucesso. Voce pode entrar agora.")
+    } catch (error) {
+      const errorMessage = axios.isAxiosError(error)
+        ? error.response?.data?.message
+        : null
+
+      setStatus("error")
+      setMessage(errorMessage ?? "Falha na conexao com o servidor.")
+    }
+  }
+
   return (
     <Card {...props}>
       <CardHeader>
@@ -28,11 +68,18 @@ export function SignupForm({ onSwitchTab, ...props }: SignupFormProps) {
         </CardDescription>
       </CardHeader>
       <CardContent>
-        <form onSubmit={(e) => e.preventDefault()}>
+        <form onSubmit={handleSubmit}>
           <FieldGroup>
             <Field>
               <FieldLabel htmlFor="name">Nome Completo</FieldLabel>
-              <Input id="name" type="text" placeholder="Felipe Figueiredo Mascarenhas" required />
+              <Input
+                id="name"
+                type="text"
+                placeholder="Felipe Figueiredo Mascarenhas"
+                required
+                value={name}
+                onChange={(event) => setName(event.target.value)}
+              />
             </Field>
             <Field>
               <FieldLabel htmlFor="email">Email</FieldLabel>
@@ -41,24 +88,43 @@ export function SignupForm({ onSwitchTab, ...props }: SignupFormProps) {
                 type="email"
                 placeholder="felipe@gmail.com"
                 required
+                value={email}
+                onChange={(event) => setEmail(event.target.value)}
               />
             </Field>
             <Field>
               <FieldLabel htmlFor="password">Senha</FieldLabel>
-              <Input id="password" type="password" required />
+              <Input
+                id="password"
+                type="password"
+                required
+                value={password}
+                onChange={(event) => setPassword(event.target.value)}
+              />
               <FieldDescription>
                 Deve ter pelo menos 8 caracteres.
               </FieldDescription>
             </Field>
             <Field>
-              <FieldLabel htmlFor="confirm-password">
-                Confirmar Senha
-              </FieldLabel>
-              <Input id="confirm-password" type="password" required />
-              <FieldDescription>Por favor, confirme sua senha.</FieldDescription>
+              <FieldLabel htmlFor="cellphoneNumber">Telefone</FieldLabel>
+              <Input
+                id="cellphoneNumber"
+                type="tel"
+                placeholder="11999999999"
+                required
+                value={cellphoneNumber}
+                onChange={(event) => setCellphoneNumber(event.target.value)}
+              />
             </Field>
+            {message ? (
+              <FieldDescription className={status === "error" ? "text-red-400" : "text-emerald-400"}>
+                {message}
+              </FieldDescription>
+            ) : null}
             <Field>
-              <Button type="submit" className="w-full">Criar conta</Button>
+              <Button type="submit" className="w-full" disabled={status === "loading"}>
+                {status === "loading" ? "Criando..." : "Criar conta"}
+              </Button>
               <FieldDescription className="text-center mt-4 text-zinc-400">
                 Já tem uma conta?{" "}
                 <button 

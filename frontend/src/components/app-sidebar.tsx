@@ -1,6 +1,7 @@
 "use client"
 
 import { LayoutDashboard, DollarSign, Users, Box, Settings, LogOut } from "lucide-react"
+import { useRouter } from "next/navigation"
 import {
   Sidebar,
   SidebarContent,
@@ -26,6 +27,13 @@ const bottomItems = [
 ]
 
 export function AppSidebar() {
+  const router = useRouter()
+
+  const handleLogout = () => {
+    localStorage.removeItem("auth_token")
+    router.replace("/login")
+  }
+
   return (
     <Sidebar>
       <SidebarHeader className="px-4 py-4 border-b border-zinc-800">
@@ -73,7 +81,10 @@ export function AppSidebar() {
             </SidebarMenuItem>
           ))}
           <SidebarMenuItem>
-            <SidebarMenuButton className="text-zinc-400 hover:text-red-400 hover:bg-red-500/10 rounded-md transition-colors w-full">
+            <SidebarMenuButton
+              className="text-zinc-400 hover:text-red-400 hover:bg-red-500/10 rounded-md transition-colors w-full"
+              onClick={handleLogout}
+            >
               <div className="flex items-center gap-3 px-3 py-2">
                 <LogOut className="h-4 w-4" />
                 <span className="text-sm">Sair</span>
