@@ -1,5 +1,7 @@
 package br.com.geloteam.studentmanagement.Services;
 
+import br.com.geloteam.studentmanagement.Models.Payment;
+import br.com.geloteam.studentmanagement.Models.Student;
 import br.com.geloteam.studentmanagement.Models.Subscription;
 import br.com.geloteam.studentmanagement.Repositories.SubscriptionRepository;
 import jakarta.transaction.Transactional;
@@ -16,7 +18,13 @@ public class SubscriptionService {
     @Autowired
     SubscriptionRepository subscriptionRepository;
 
-    public Subscription findById(Long id){
+    @Autowired
+    PaymentService paymentService;
+
+    @Autowired
+    StudentService studentService;
+
+    public Subscription findById(Long id) {
         Optional<Subscription> subscription = this.subscriptionRepository.findById(id);
         return subscription.orElseThrow(() -> new ValidationException(
                 "Assinatura não encontrado"
@@ -28,24 +36,53 @@ public class SubscriptionService {
     }
 
     public List<Subscription> findAllUserSubscription(String name) {
-        return subscriptionRepository.findAllBySubscriptionStudentName(name);
+        return subscriptionRepository.findAllByStudentName(name);
     }
 
     @Transactional
-    public Subscription update(Subscription subscriptions){
+    public Subscription update(Subscription subscriptions) {
         Subscription subscription = findById(subscriptions.getId());
-        return this.subscriptionRepository.save(subscription);
+
+        subscription.setStartDate(subscriptions.getStartDate());
+        subscription.setStatus(subscriptions.getStatus());
+        subscription.setPaymentMethod(subscriptions.getPaymentMethod());
+        subscription.setPlan(subscriptions.getPlan());
+
+        Subscription savedSubscription = this.subscriptionRepository.save(subscription);
+
+        Payment lastPayment = paymentService.findAllPaymentsSubscription(savedSubscription.getId()).getLast();
+
+        if (lastPayment.getStatus().equals("A receber") || lastPayment.getStatus().equals("Vencido")) {
+            throw new RuntimeException("O aluno possui pagamentos pendentes ou vencidos!");
+        }
+
+        //se for renovação da assinatura, o plano será ativo e irá gerar o pagamento
+        //caso for cancelamento o plano será inativado e não irá gerar pagamento
+        if (savedSubscription.getStatus().equals("Ativo")) {
+            paymentService.savePaymentSubscription(savedSubscription);
+        }
+
+        return savedSubscription;
     }
 
     @Transactional
-    public void delete(long id){
+    public void delete(long id) {
         subscriptionRepository.deleteById(id);
     }
 
     @Transactional
-    public Subscription save(Subscription subscription){
-        return this.subscriptionRepository.save(subscription);
-    }
+    public Subscription save(Subscription subscription) {
+        Student student = studentService.findById(subscription.getStudent().getId());
+        if (!subscriptionRepository.existsByStudentIdAndStatus(student.getId(), "ATIVO")) {
+            throw new RuntimeException("O aluno já possui uma assinatura ativa");
+        }
 
+        Subscription savedSubscription = this.subscriptionRepository.save(subscription);
+
+        paymentService.savePaymentSubscription(savedSubscription);
+
+        return savedSubscription;
+
+    }
 
 }

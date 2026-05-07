@@ -38,36 +38,29 @@ export function LoginForm({ className, onSwitchTab, ...props }: LoginFormProps) 
                   id="email"
                   type="email"
                   placeholder="felipe@gmail.com"
-                  className="border-[#FFFFFF]/20 bg-[#000000] text-[#FFFFFF] placeholder:text-[#FFFFFF]/40 focus-visible:border-[#DD050A]"
                   required
                 />
               </Field>
               <Field>
                 <div className="flex items-center">
-                  <FieldLabel htmlFor="password" className="text-[#FFFFFF]">Senha</FieldLabel>
+                  <FieldLabel htmlFor="password">Senha</FieldLabel>
                   <a
                     href="#"
-                    className="ml-auto inline-block text-sm text-[#FFFFFF]/70 underline-offset-4 hover:text-[#FFFFFF] hover:underline"
+                    className="ml-auto inline-block text-sm underline-offset-4 hover:underline text-zinc-400"
                   >
                     Esqueceu sua senha?
                   </a>
                 </div>
-                <Input
-                  id="password"
-                  type="password"
-                  required
-                  placeholder="********"
-                  className="border-[#FFFFFF]/20 bg-[#000000] text-[#FFFFFF] placeholder:text-[#FFFFFF]/40 focus-visible:border-[#DD050A]"
-                />
+                <Input id="password" type="password" required placeholder="********" />
               </Field>
               <Field>
-                <Button type="submit" className="w-full bg-[#DD050A] text-[#FFFFFF] hover:bg-[#DD050A]/90">Login</Button>
-                <FieldDescription className="mt-4 text-center text-[#FFFFFF]/70">
+                <Button type="submit" className="w-full">Login</Button>
+                <FieldDescription className="text-center mt-4 text-zinc-400">
                   Não tem uma conta?{" "}
-                  <button
+                  <button 
                     type="button"
                     onClick={onSwitchTab}
-                    className="text-[#FFFFFF] underline underline-offset-4 transition-colors hover:text-[#DD050A]"
+                    className="text-[#09090B] underline underline-offset-4 hover:text-[#535353] transition-colors"
                   >
                     Criar agora
                   </button>

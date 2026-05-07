@@ -49,6 +49,11 @@ public class PaymentController {
         Payment payment = this.paymentService.findById(id);
         return ResponseEntity.ok().body(payment);
     }
+    
+    @GetMapping("/payment/subscription={id}")
+    public ResponseEntity<List<Payment>> getPaymentsSubscription(@PathVariable Long id) {
+        return ResponseEntity.ok().body(paymentService.findAllPaymentsSubscription(id));
+    }
 
     @PutMapping("/payment/{id}")
     public ResponseEntity<Void> updatePayment(@Valid @RequestBody Payment payment, @PathVariable Long id){

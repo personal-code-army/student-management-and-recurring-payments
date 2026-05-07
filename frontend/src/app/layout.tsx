@@ -6,8 +6,8 @@ import "./globals.css";
 const geist = Geist({ subsets: ["latin"] });
 
 export const metadata: Metadata = {
-  title: "Gelo Team Chakuriki",
-  description: "Gestão de planos e alunos",
+  title: "Controle de Alunos e Pagamentos ",
+  description: "Painel de controle Gelo Team Chakuriki",
 };
 
 export default function RootLayout({

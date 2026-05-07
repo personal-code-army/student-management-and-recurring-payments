@@ -34,14 +34,8 @@ export function SignupForm({ onSwitchTab, ...props }: SignupFormProps) {
         <form onSubmit={(e) => e.preventDefault()}>
           <FieldGroup>
             <Field>
-              <FieldLabel htmlFor="name" className="text-[#FFFFFF]">Nome Completo</FieldLabel>
-              <Input
-                id="name"
-                type="text"
-                placeholder="Felipe Figueiredo Mascarenhas"
-                className="border-[#FFFFFF]/20 bg-[#000000] text-[#FFFFFF] placeholder:text-[#FFFFFF]/40 focus-visible:border-[#DD050A]"
-                required
-              />
+              <FieldLabel htmlFor="name">Nome Completo</FieldLabel>
+              <Input id="name" type="text" placeholder="Felipe Figueiredo Mascarenhas" required />
             </Field>
             <Field>
               <FieldLabel htmlFor="email" className="text-[#FFFFFF]">Email</FieldLabel>
@@ -49,7 +43,6 @@ export function SignupForm({ onSwitchTab, ...props }: SignupFormProps) {
                 id="email"
                 type="email"
                 placeholder="felipe@gmail.com"
-                className="border-[#FFFFFF]/20 bg-[#000000] text-[#FFFFFF] placeholder:text-[#FFFFFF]/40 focus-visible:border-[#DD050A]"
                 required
               />
             </Field>
@@ -85,6 +78,19 @@ export function SignupForm({ onSwitchTab, ...props }: SignupFormProps) {
                   type="button"
                   onClick={onSwitchTab}
                   className="text-[#FFFFFF] underline underline-offset-4 transition-colors hover:text-[#DD050A]"
+                >
+                  Entrar
+                </button>
+              </FieldDescription>
+            </Field>
+            <Field>
+              <Button type="submit" className="w-full">Criar conta</Button>
+              <FieldDescription className="text-center mt-4 text-zinc-400">
+                Já tem uma conta?{" "}
+                <button 
+                  type="button"
+                  onClick={onSwitchTab}
+                  className="text-[#09090B] underline underline-offset-4 hover:text-[#535353] transition-colors"
                 >
                   Entrar
                 </button>
