@@ -15,6 +15,6 @@ public class ErrorDTO {
     public ErrorDTO(int status, String message) {
         this.status = status;
         this.message = message;
-        this.timestamp = LocalDateTime.now().toString();
+        this.timestamp = Instant.now().toString();
     }
 }
