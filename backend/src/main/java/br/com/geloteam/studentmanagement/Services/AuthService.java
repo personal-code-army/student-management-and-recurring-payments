@@ -29,7 +29,7 @@ import java.util.Objects;
 public class AuthService implements UserDetailsService {
 
     private final CompanyService companyService;
-    private final UserRepository userRepository; // usar a logica no service aqui e chamar o repository la
+    private final UserRepository userRepository;
     private final AuthenticationManager authenticationManager;
     private final TokenService tokenService;
     private final PasswordEncoder passwordEncoder;
