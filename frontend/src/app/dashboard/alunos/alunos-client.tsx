@@ -263,7 +263,9 @@ export function AlunosClient() {
                         Nenhum aluno encontrado com os filtros selecionados.
                       </TableCell>
                     </TableRow>
-                  ) : visiveis.map(aluno => (
+                  ) : visiveis.map(aluno => {
+                    const telDigits = (aluno.telefone || "").replace(/\D/g, "")
+                    return (
                     <TableRow
                       key={aluno.id}
                       className={`border-[#FFFFFF]/10 transition-colors ${deletandoId === aluno.id ? "bg-[#DD050A]/8" : "hover:bg-[#FFFFFF]/5"}`}
@@ -302,7 +304,7 @@ export function AlunosClient() {
                         ) : (
                           <div className="flex items-center justify-end gap-1.5">
                             <a
-                              href={`https://wa.me/55${aluno.telefone}`}
+                              href={`https://wa.me/55${telDigits}`}
                               target="_blank"
                               rel="noreferrer"
                               aria-label={`Contatar ${aluno.nome} via WhatsApp (abre nova aba)`}
@@ -328,7 +330,7 @@ export function AlunosClient() {
                         )}
                       </TableCell>
                     </TableRow>
-                  ))}
+                  )})}
                 </TableBody>
               </Table>
 
