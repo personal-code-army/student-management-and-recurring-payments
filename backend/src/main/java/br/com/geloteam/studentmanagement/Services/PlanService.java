@@ -2,6 +2,8 @@ package br.com.geloteam.studentmanagement.Services;
 
 import br.com.geloteam.studentmanagement.Models.Plan;
 import br.com.geloteam.studentmanagement.Repositories.PlanRepository;
+import br.com.geloteam.studentmanagement.exception.EntityIdNotExistsOrDelete;
+import br.com.geloteam.studentmanagement.exception.EntityNotFound;
 import jakarta.transaction.Transactional;
 import jakarta.validation.ValidationException;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -18,7 +20,7 @@ public class PlanService {
 
     public Plan findById(Long id){
         Optional<Plan> plan = this.planRepository.findById(id);
-        return plan.orElseThrow(() -> new ValidationException(
+        return plan.orElseThrow(() -> new EntityNotFound(
                 "Plano não encontrado"
         ));
     }
@@ -39,6 +41,9 @@ public class PlanService {
 
     @Transactional
     public void delete(long id){
+        if(!planRepository.existsById(id)) {
+            throw new EntityIdNotExistsOrDelete("Este plano não existe ou já foi excluso!");
+        }
         planRepository.deleteById(id);
     }
 

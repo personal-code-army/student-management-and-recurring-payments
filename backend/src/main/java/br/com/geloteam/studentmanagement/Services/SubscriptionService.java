@@ -4,8 +4,11 @@ import br.com.geloteam.studentmanagement.Models.Payment;
 import br.com.geloteam.studentmanagement.Models.Student;
 import br.com.geloteam.studentmanagement.Models.Subscription;
 import br.com.geloteam.studentmanagement.Repositories.SubscriptionRepository;
+import br.com.geloteam.studentmanagement.exception.SubscriptionAlreadyExists;
+import br.com.geloteam.studentmanagement.exception.EntityIdNotExistsOrDelete;
+import br.com.geloteam.studentmanagement.exception.EntityNotFound;
+import br.com.geloteam.studentmanagement.exception.SubscriptionPendingPayament;
 import jakarta.transaction.Transactional;
-import jakarta.validation.ValidationException;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
@@ -26,7 +29,7 @@ public class SubscriptionService {
 
     public Subscription findById(Long id) {
         Optional<Subscription> subscription = this.subscriptionRepository.findById(id);
-        return subscription.orElseThrow(() -> new ValidationException(
+        return subscription.orElseThrow(() -> new EntityNotFound(
                 "Assinatura não encontrado"
         ));
     }
@@ -53,7 +56,7 @@ public class SubscriptionService {
         Payment lastPayment = paymentService.findAllPaymentsSubscription(savedSubscription.getId()).getLast();
 
         if (lastPayment.getStatus().equals("A receber") || lastPayment.getStatus().equals("Vencido")) {
-            throw new RuntimeException("O aluno possui pagamentos pendentes ou vencidos!");
+            throw new SubscriptionPendingPayament("O aluno possui pagamentos pendentes ou vencidos!");
         }
 
         //se for renovação da assinatura, o plano será ativo e irá gerar o pagamento
@@ -67,6 +70,9 @@ public class SubscriptionService {
 
     @Transactional
     public void delete(long id) {
+        if(!subscriptionRepository.existsById(id)){
+            throw new EntityIdNotExistsOrDelete("A subscrição não existe, ou já foi excluida.");
+        }
         subscriptionRepository.deleteById(id);
     }
 
@@ -74,7 +80,7 @@ public class SubscriptionService {
     public Subscription save(Subscription subscription) {
         Student student = studentService.findById(subscription.getStudent().getId());
         if (!subscriptionRepository.existsByStudentIdAndStatus(student.getId(), "ATIVO")) {
-            throw new RuntimeException("O aluno já possui uma assinatura ativa");
+            throw new SubscriptionAlreadyExists("O aluno já possui uma assinatura ativa");
         }
 
         Subscription savedSubscription = this.subscriptionRepository.save(subscription);
@@ -82,7 +88,6 @@ public class SubscriptionService {
         paymentService.savePaymentSubscription(savedSubscription);
 
         return savedSubscription;
-
     }
 
 }
