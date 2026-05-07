@@ -9,7 +9,7 @@ import {
 	TableHeader,
 	TableRow,
 } from "@/components/ui/table";
-import { CircleAlert, CircleDollarSign, Clock, TrendingUp, Users } from "lucide-react";
+import { CircleAlert, CircleDollarSign, Clock, MessageCircle, TrendingUp, Users } from "lucide-react";
 import { SidebarProvider, SidebarTrigger } from "@/components/ui/sidebar";
 import { AppSidebar } from "@/components/app-sidebar";
 import { Separator } from "@/components/ui/separator";

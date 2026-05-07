@@ -20,9 +20,12 @@ interface SignupFormProps extends React.ComponentProps<typeof Card> {
 
 export function SignupForm({ onSwitchTab, ...props }: SignupFormProps) {
   return (
-    <Card {...props}>
+    <Card
+      {...props}
+      className="border border-[#FFFFFF]/15 bg-[#020203]/90 text-[#FFFFFF] shadow-[0_20px_60px_rgba(0,0,0,0.5)] backdrop-blur"
+    >
       <CardHeader>
-        <CardTitle>Criar conta</CardTitle>
+        <CardTitle className="text-2xl text-[#FFFFFF]">Criar conta</CardTitle>
         <CardDescription>
           Insira suas informações abaixo para criar sua conta
         </CardDescription>
@@ -35,7 +38,7 @@ export function SignupForm({ onSwitchTab, ...props }: SignupFormProps) {
               <Input id="name" type="text" placeholder="Felipe Figueiredo Mascarenhas" required />
             </Field>
             <Field>
-              <FieldLabel htmlFor="email">Email</FieldLabel>
+              <FieldLabel htmlFor="email" className="text-[#FFFFFF]">Email</FieldLabel>
               <Input
                 id="email"
                 type="email"
@@ -44,9 +47,14 @@ export function SignupForm({ onSwitchTab, ...props }: SignupFormProps) {
               />
             </Field>
             <Field>
-              <FieldLabel htmlFor="password">Senha</FieldLabel>
-              <Input id="password" type="password" required />
-              <FieldDescription>
+              <FieldLabel htmlFor="password" className="text-[#FFFFFF]">Senha</FieldLabel>
+              <Input
+                id="password"
+                type="password"
+                className="border-[#FFFFFF]/20 bg-[#000000] text-[#FFFFFF] placeholder:text-[#FFFFFF]/40 focus-visible:border-[#DD050A]"
+                required
+              />
+              <FieldDescription className="text-[#FFFFFF]/65">
                 Deve ter pelo menos 8 caracteres.
               </FieldDescription>
             </Field>
@@ -54,8 +62,26 @@ export function SignupForm({ onSwitchTab, ...props }: SignupFormProps) {
               <FieldLabel htmlFor="confirm-password">
                 Confirmar Senha
               </FieldLabel>
-              <Input id="confirm-password" type="password" required />
-              <FieldDescription>Por favor, confirme sua senha.</FieldDescription>
+              <Input
+                id="confirm-password"
+                type="password"
+                className="border-[#FFFFFF]/20 bg-[#000000] text-[#FFFFFF] placeholder:text-[#FFFFFF]/40 focus-visible:border-[#DD050A]"
+                required
+              />
+              <FieldDescription className="text-[#FFFFFF]/65">Por favor, confirme sua senha.</FieldDescription>
+            </Field>
+            <Field>
+              <Button type="submit" className="w-full bg-[#DD050A] text-[#FFFFFF] hover:bg-[#DD050A]/90">Criar conta</Button>
+              <FieldDescription className="mt-4 text-center text-[#FFFFFF]/70">
+                Já tem uma conta?{" "}
+                <button
+                  type="button"
+                  onClick={onSwitchTab}
+                  className="text-[#FFFFFF] underline underline-offset-4 transition-colors hover:text-[#DD050A]"
+                >
+                  Entrar
+                </button>
+              </FieldDescription>
             </Field>
             <Field>
               <Button type="submit" className="w-full">Criar conta</Button>
