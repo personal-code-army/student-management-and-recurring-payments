@@ -1,6 +1,7 @@
 "use client"
 
 import { LayoutDashboard, DollarSign, Users, Box, Settings, LogOut } from "lucide-react"
+import { useRouter } from "next/navigation"
 import {
   Sidebar,
   SidebarContent,
@@ -27,6 +28,13 @@ const bottomItems = [
 ]
 
 export function AppSidebar() {
+  const router = useRouter()
+
+  const handleLogout = () => {
+    localStorage.removeItem("auth_token")
+    router.replace("/login")
+  }
+
   return (
     <Sidebar className="[--sidebar:#020203] [--sidebar-foreground:#FFFFFF] [--sidebar-border:#2A2A2A] border-r border-[#2A2A2A] text-[#FFFFFF]">
       <SidebarHeader className="relative overflow-hidden border-b border-[#FFFFFF]/10 px-4 py-4">
