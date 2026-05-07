@@ -2,6 +2,7 @@ package br.com.geloteam.studentmanagement.Services;
 
 import br.com.geloteam.studentmanagement.Models.Company;
 import br.com.geloteam.studentmanagement.Repositories.CompanyRepository;
+import br.com.geloteam.studentmanagement.exception.EntityNotFound;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 import org.springframework.web.server.ResponseStatusException;
@@ -17,6 +18,6 @@ public class CompanyService {
 
     public Company findById(Long id) {
         return companyRepository.findById(id)
-                .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Company not found!"));
+                .orElseThrow(() -> new EntityNotFound("Company não encontrada!"));
     }
 }

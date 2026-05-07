@@ -64,9 +64,9 @@ export function LoginForm({ className, onSwitchTab, ...props }: LoginFormProps) 
 
   return (
     <div className={cn("flex flex-col gap-6", className)} {...props}>
-      <Card>
+      <Card className="border border-[#FFFFFF]/15 bg-[#020203]/90 text-[#FFFFFF] shadow-[0_20px_60px_rgba(0,0,0,0.5)] backdrop-blur">
         <CardHeader>
-          <CardTitle>Faça login</CardTitle>
+          <CardTitle className="text-2xl text-[#FFFFFF]">Faça login</CardTitle>
           <CardDescription>
             Insira seu e-mail abaixo para acessar sua conta.
           </CardDescription>
@@ -75,7 +75,7 @@ export function LoginForm({ className, onSwitchTab, ...props }: LoginFormProps) 
           <form onSubmit={handleSubmit}>
             <FieldGroup>
               <Field>
-                <FieldLabel htmlFor="email">Email</FieldLabel>
+                <FieldLabel htmlFor="email" className="text-[#FFFFFF]">Email</FieldLabel>
                 <Input
                   id="email"
                   type="email"

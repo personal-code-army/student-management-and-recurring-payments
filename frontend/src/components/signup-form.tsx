@@ -60,9 +60,12 @@ export function SignupForm({ onSwitchTab, ...props }: SignupFormProps) {
   }
 
   return (
-    <Card {...props}>
+    <Card
+      {...props}
+      className="border border-[#FFFFFF]/15 bg-[#020203]/90 text-[#FFFFFF] shadow-[0_20px_60px_rgba(0,0,0,0.5)] backdrop-blur"
+    >
       <CardHeader>
-        <CardTitle>Criar conta</CardTitle>
+        <CardTitle className="text-2xl text-[#FFFFFF]">Criar conta</CardTitle>
         <CardDescription>
           Insira suas informações abaixo para criar sua conta
         </CardDescription>
@@ -82,7 +85,7 @@ export function SignupForm({ onSwitchTab, ...props }: SignupFormProps) {
               />
             </Field>
             <Field>
-              <FieldLabel htmlFor="email">Email</FieldLabel>
+              <FieldLabel htmlFor="email" className="text-[#FFFFFF]">Email</FieldLabel>
               <Input
                 id="email"
                 type="email"
@@ -93,28 +96,41 @@ export function SignupForm({ onSwitchTab, ...props }: SignupFormProps) {
               />
             </Field>
             <Field>
-              <FieldLabel htmlFor="password">Senha</FieldLabel>
+              <FieldLabel htmlFor="password" className="text-[#FFFFFF]">Senha</FieldLabel>
               <Input
                 id="password"
                 type="password"
+                className="border-[#FFFFFF]/20 bg-[#000000] text-[#FFFFFF] placeholder:text-[#FFFFFF]/40 focus-visible:border-[#DD050A]"
                 required
-                value={password}
-                onChange={(event) => setPassword(event.target.value)}
               />
-              <FieldDescription>
+              <FieldDescription className="text-[#FFFFFF]/65">
                 Deve ter pelo menos 8 caracteres.
               </FieldDescription>
             </Field>
             <Field>
-              <FieldLabel htmlFor="cellphoneNumber">Telefone</FieldLabel>
+              <FieldLabel htmlFor="confirm-password">
+                Confirmar Senha
+              </FieldLabel>
               <Input
-                id="cellphoneNumber"
-                type="tel"
-                placeholder="11999999999"
+                id="confirm-password"
+                type="password"
+                className="border-[#FFFFFF]/20 bg-[#000000] text-[#FFFFFF] placeholder:text-[#FFFFFF]/40 focus-visible:border-[#DD050A]"
                 required
-                value={cellphoneNumber}
-                onChange={(event) => setCellphoneNumber(event.target.value)}
               />
+              <FieldDescription className="text-[#FFFFFF]/65">Por favor, confirme sua senha.</FieldDescription>
+            </Field>
+            <Field>
+              <Button type="submit" className="w-full bg-[#DD050A] text-[#FFFFFF] hover:bg-[#DD050A]/90">Criar conta</Button>
+              <FieldDescription className="mt-4 text-center text-[#FFFFFF]/70">
+                Já tem uma conta?{" "}
+                <button
+                  type="button"
+                  onClick={onSwitchTab}
+                  className="text-[#FFFFFF] underline underline-offset-4 transition-colors hover:text-[#DD050A]"
+                >
+                  Entrar
+                </button>
+              </FieldDescription>
             </Field>
             {message ? (
               <FieldDescription className={status === "error" ? "text-red-400" : "text-emerald-400"}>
