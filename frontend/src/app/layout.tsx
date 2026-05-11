@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import { Geist } from "next/font/google";
+import { AuthGuard } from "@/components/auth-guard";
 import "./globals.css";
 
 
@@ -17,7 +18,9 @@ export default function RootLayout({
 }) {
   return (
     <html lang="pt-BR">
-      <body className={geist.className}>{children}</body>
+      <body className={geist.className}>
+        <AuthGuard>{children}</AuthGuard>
+      </body>
     </html>
   );
 }

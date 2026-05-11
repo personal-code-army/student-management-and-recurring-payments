@@ -31,8 +31,4 @@ public class Subscription {
 
     @Column(name = "payment_method")
     private String paymentMethod;
-
-
-
-
 }

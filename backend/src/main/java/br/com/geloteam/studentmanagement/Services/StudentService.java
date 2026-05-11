@@ -4,6 +4,7 @@ import br.com.geloteam.studentmanagement.Models.Student;
 import br.com.geloteam.studentmanagement.Models.Subscription;
 import br.com.geloteam.studentmanagement.Repositories.StudentRepository;
 import br.com.geloteam.studentmanagement.Repositories.SubscriptionRepository;
+import br.com.geloteam.studentmanagement.exception.EntityNotFound;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
@@ -20,7 +21,7 @@ public class StudentService {
 
     public Student findById(Long id) {
         return studentRepository.findById(id)
-                .orElseThrow(() -> new RuntimeException("Aluno não encontrado com ID: " + id));
+                .orElseThrow(() -> new EntityNotFound("Aluno não encontrado com ID: " + id));
     }
 
     public List<Subscription> getSubscriptionsByStudent(Long studentId) {
