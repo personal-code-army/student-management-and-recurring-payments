@@ -44,7 +44,9 @@ public class PaymentService {
     @Transactional
     public Payment update(Payment payments) {
         Payment payment = findById(payments.getId());
-        return this.paymentRepository.save(payment);
+        Payment saved = this.paymentRepository.save(payment);
+        log.info("Payment {} updated", saved.getId());
+        return saved;
     }
 
     @Transactional
@@ -55,7 +57,9 @@ public class PaymentService {
 
     @Transactional
     public Payment save(Payment payment) {
-        return this.paymentRepository.save(payment);
+        Payment saved = this.paymentRepository.save(payment);
+        log.info("Payment {} saved", saved.getId());
+        return saved;
     }
 
     // função para geração de pagamentos recorrentes

@@ -30,6 +30,11 @@ import java.util.Objects;
 @Service
 public class AuthService implements UserDetailsService {
 
+    private static String maskEmail(String email) {
+        if (email == null || !email.contains("@")) return "<invalid>";
+        return "***@" + email.substring(email.indexOf('@') + 1);
+    }
+
     private final CompanyService companyService;
     private final UserRepository userRepository;
     private final AuthenticationManager authenticationManager;
@@ -54,7 +59,7 @@ public class AuthService implements UserDetailsService {
     public UserDetails loadUserByUsername(String email) throws UsernameNotFoundException {
         return userRepository.findUserByEmail(email)
                 .orElseThrow(() -> {
-                    log.warn("Login Failed: user not found with email '{}' ", email);
+                    log.warn("Login Failed: user not found with email '{}' ", maskEmail(email));
                     return new UsernameNotFoundException("User not found with email: ");
                 });
     }
@@ -63,14 +68,14 @@ public class AuthService implements UserDetailsService {
         var authenticationToken = new UsernamePasswordAuthenticationToken(data.email(), data.password());
         var auth = authenticationManager.authenticate(authenticationToken);
 
-        log.info("Login successful: {}", data.email());
+        log.info("Login successful: {}", maskEmail(data.email()));
         return tokenService.generateLoginResponse(auth);
     }
 
     @Transactional
     public RegisterResponseDTO register(RegisterRequestDTO data) {
         if (userRepository.findUserByEmail(data.email()).isPresent()) {
-            log.warn("Register failed: email already in use '{}'", data.email());
+            log.warn("Register failed: email already in use '{}'", maskEmail(data.email()));
             throw new ResponseStatusException(HttpStatus.CONFLICT, "E-mail already exists!");
         }
 
@@ -91,7 +96,7 @@ public class AuthService implements UserDetailsService {
 
         User savedUser = userRepository.save(user);
 
-        log.info("New user registered: {}", savedUser.getEmail());
+        log.info("New user registered: {}", maskEmail(savedUser.getEmail()));
         return new RegisterResponseDTO(savedUser);
     }
 

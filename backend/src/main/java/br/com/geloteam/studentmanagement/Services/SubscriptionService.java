@@ -78,7 +78,7 @@ public class SubscriptionService {
     @Transactional
     public Subscription save(Subscription subscription) {
         Student student = studentService.findById(subscription.getStudent().getId());
-        if (!subscriptionRepository.existsByStudentIdAndStatus(student.getId(), "ATIVO")) {
+        if (subscriptionRepository.existsByStudentIdAndStatus(student.getId(), "ATIVO")) {
             log.warn("Subscription not created: student {} already has an active subscription", student.getId());
             throw new RuntimeException("O aluno já possui uma assinatura ativa");
         }

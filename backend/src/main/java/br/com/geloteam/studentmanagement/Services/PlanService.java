@@ -36,7 +36,9 @@ public class PlanService {
     @Transactional
     public Plan update(Plan plans){
         Plan plan = findById(plans.getId());
-        return this.planRepository.save(plan);
+        Plan saved = this.planRepository.save(plan);
+        log.info("Plan {} updated", saved.getName());
+        return saved;
     }
 
     @Transactional

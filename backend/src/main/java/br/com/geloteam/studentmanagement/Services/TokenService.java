@@ -5,12 +5,14 @@ import org.springframework.security.core.Authentication;
 import org.springframework.security.core.GrantedAuthority;
 import org.springframework.security.oauth2.jose.jws.MacAlgorithm;
 import org.springframework.security.oauth2.jwt.*;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 
 import java.time.Instant;
 import java.util.Objects;
 import java.util.stream.Collectors;
 
+@Slf4j
 @Service
 public class TokenService {
 
@@ -44,6 +46,7 @@ public class TokenService {
         try {
             return jwtEncoder.encode(parameters).getTokenValue();
         } catch (JwtEncodingException e) {
+            log.error("Failed to generate JWT token for user '{}'", authentication.getName(), e);
             throw new RuntimeException("Error generating JWT token", e);
         }
     }
