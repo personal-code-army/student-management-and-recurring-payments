@@ -5,6 +5,7 @@ import br.com.geloteam.studentmanagement.Models.Subscription;
 import br.com.geloteam.studentmanagement.Repositories.PaymentRepository;
 import jakarta.transaction.Transactional;
 import jakarta.validation.ValidationException;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
@@ -13,6 +14,7 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
 
+@Slf4j
 @Service
 public class PaymentService {
 
@@ -48,6 +50,7 @@ public class PaymentService {
     @Transactional
     public void delete(long id) {
         paymentRepository.deleteById(id);
+        log.info("Payment {} deleted", id);
     }
 
     @Transactional
@@ -84,6 +87,7 @@ public class PaymentService {
             }
         }
 
+        log.info("{} recurring payments generated for subscription {}", payments.size(), subscription.getId());
         return payments;
 
     }
@@ -102,6 +106,8 @@ public class PaymentService {
         payment.setStatus("A receber");
         payment.setSubscription(subscription);
 
-        return this.paymentRepository.save(payment);
+        Payment saved = this.paymentRepository.save(payment);
+        log.info("Initial payment created for subscription {}, due: {}", subscription.getId(), saved.getDueDate());
+        return saved;
     }
 }

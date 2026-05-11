@@ -6,11 +6,13 @@ import br.com.geloteam.studentmanagement.Models.Company;
 import br.com.geloteam.studentmanagement.Models.User;
 import br.com.geloteam.studentmanagement.Repositories.UserRepository;
 import jakarta.transaction.Transactional;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.security.core.userdetails.UsernameNotFoundException;
 import org.springframework.stereotype.Service;
 
 import java.util.List;
 
+@Slf4j
 @Service
 public class UserService {
 
@@ -42,6 +44,7 @@ public class UserService {
         user.setCompany(company);
 
         User savedUser = userRepository.save(user);
+        log.info("User {} updated", savedUser.getId());
         return new RegisterResponseDTO(savedUser);
     }
 
@@ -49,6 +52,7 @@ public class UserService {
     public RegisterResponseDTO delete(Long id) {
         User user = userRepository.findById(id).orElseThrow();
         userRepository.delete(user);
+        log.info("User {} deleted", id);
         return new RegisterResponseDTO(user);
     }
 }

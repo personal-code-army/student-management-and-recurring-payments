@@ -4,12 +4,14 @@ import br.com.geloteam.studentmanagement.Models.Plan;
 import br.com.geloteam.studentmanagement.Repositories.PlanRepository;
 import jakarta.transaction.Transactional;
 import jakarta.validation.ValidationException;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
 import java.util.List;
 import java.util.Optional;
 
+@Slf4j
 @Service
 public class PlanService {
 
@@ -40,11 +42,14 @@ public class PlanService {
     @Transactional
     public void delete(long id){
         planRepository.deleteById(id);
+        log.info("Plan {} deleted", id);
     }
 
     @Transactional
     public Plan save(Plan plan){
-        return this.planRepository.save(plan);
+        Plan saved = this.planRepository.save(plan);
+        log.info("Plan created: {}", saved.getName());
+        return saved;
     }
 
 }
