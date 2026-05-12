@@ -9,12 +9,14 @@ import br.com.geloteam.studentmanagement.exception.EntityIdNotExistsOrDelete;
 import br.com.geloteam.studentmanagement.exception.EntityNotFound;
 import br.com.geloteam.studentmanagement.exception.SubscriptionPendingPayament;
 import jakarta.transaction.Transactional;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
 import java.util.List;
 import java.util.Optional;
 
+@Slf4j
 @Service
 public class SubscriptionService {
 
@@ -56,13 +58,15 @@ public class SubscriptionService {
         Payment lastPayment = paymentService.findAllPaymentsSubscription(savedSubscription.getId()).getLast();
 
         if (lastPayment.getStatus().equals("A receber") || lastPayment.getStatus().equals("Vencido")) {
+            log.warn("Subscription {} renewal denied: pending or overdue payment exists", savedSubscription.getId());
             throw new SubscriptionPendingPayament("O aluno possui pagamentos pendentes ou vencidos!");
         }
 
-        //se for renovação da assinatura, o plano será ativo e irá gerar o pagamento
-        //caso for cancelamento o plano será inativado e não irá gerar pagamento
         if (savedSubscription.getStatus().equals("Ativo")) {
             paymentService.savePaymentSubscription(savedSubscription);
+            log.info("Subscription {} renewed, new payment generated", savedSubscription.getId());
+        } else {
+            log.info("Subscription {} deactivated", savedSubscription.getId());
         }
 
         return savedSubscription;
@@ -74,18 +78,21 @@ public class SubscriptionService {
             throw new EntityIdNotExistsOrDelete("A subscrição não existe, ou já foi excluida.");
         }
         subscriptionRepository.deleteById(id);
+        log.info("Subscription {} deleted", id);
     }
 
     @Transactional
     public Subscription save(Subscription subscription) {
         Student student = studentService.findById(subscription.getStudent().getId());
-        if (!subscriptionRepository.existsByStudentIdAndStatus(student.getId(), "ATIVO")) {
+        if (subscriptionRepository.existsByStudentIdAndStatus(student.getId(), "Ativo")) {
+            log.warn("Subscription not created: student {} already has an active subscription", student.getId());
             throw new SubscriptionAlreadyExists("O aluno já possui uma assinatura ativa");
         }
 
         Subscription savedSubscription = this.subscriptionRepository.save(subscription);
 
         paymentService.savePaymentSubscription(savedSubscription);
+        log.info("Subscription created for student {}, plan {}", student.getId(), savedSubscription.getPlan().getId());
 
         return savedSubscription;
     }

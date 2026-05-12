@@ -9,6 +9,7 @@ import br.com.geloteam.studentmanagement.Models.User;
 import br.com.geloteam.studentmanagement.Models.UserRole;
 import br.com.geloteam.studentmanagement.Repositories.UserRepository;
 import jakarta.transaction.Transactional;
+import lombok.extern.slf4j.Slf4j;
 import org.jspecify.annotations.NullMarked;
 import org.springframework.context.annotation.Lazy;
 import org.springframework.http.HttpStatus;
@@ -25,8 +26,14 @@ import org.springframework.web.server.ResponseStatusException;
 
 import java.util.Objects;
 
+@Slf4j
 @Service
 public class AuthService implements UserDetailsService {
+
+    private static String maskEmail(String email) {
+        if (email == null || !email.contains("@")) return "<invalid>";
+        return "***@" + email.substring(email.indexOf('@') + 1);
+    }
 
     private final CompanyService companyService;
     private final UserRepository userRepository;
@@ -51,19 +58,24 @@ public class AuthService implements UserDetailsService {
     @NullMarked
     public UserDetails loadUserByUsername(String email) throws UsernameNotFoundException {
         return userRepository.findUserByEmail(email)
-                .orElseThrow(() -> new UsernameNotFoundException("User not found with email: "));
+                .orElseThrow(() -> {
+                    log.warn("Login Failed: user not found with email '{}' ", maskEmail(email));
+                    return new UsernameNotFoundException("User not found with email: ");
+                });
     }
 
     public LoginResponseDTO login(LoginRequestDTO data) {
         var authenticationToken = new UsernamePasswordAuthenticationToken(data.email(), data.password());
         var auth = authenticationManager.authenticate(authenticationToken);
 
+        log.info("Login successful: {}", maskEmail(data.email()));
         return tokenService.generateLoginResponse(auth);
     }
 
     @Transactional
     public RegisterResponseDTO register(RegisterRequestDTO data) {
         if (userRepository.findUserByEmail(data.email()).isPresent()) {
+            log.warn("Register failed: email already in use '{}'", maskEmail(data.email()));
             throw new ResponseStatusException(HttpStatus.CONFLICT, "E-mail already exists!");
         }
 
@@ -84,6 +96,7 @@ public class AuthService implements UserDetailsService {
 
         User savedUser = userRepository.save(user);
 
+        log.info("New user registered: {}", maskEmail(savedUser.getEmail()));
         return new RegisterResponseDTO(savedUser);
     }
 

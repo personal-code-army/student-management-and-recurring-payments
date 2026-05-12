@@ -21,8 +21,8 @@ public class Plan {
     private String name;
 
     @Column(name = "monthly_amount")
-    private double monthlyAmount;
-    private int frequency;
+    private Double monthlyAmount;
+    private Integer frequency;
 
 //    @ManyToOne(fetch = FetchType.LAZY)
 //    @JoinColumn(name = "company_id",nullable = false, unique = true)

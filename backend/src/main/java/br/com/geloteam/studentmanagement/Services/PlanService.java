@@ -6,12 +6,14 @@ import br.com.geloteam.studentmanagement.exception.EntityIdNotExistsOrDelete;
 import br.com.geloteam.studentmanagement.exception.EntityNotFound;
 import jakarta.transaction.Transactional;
 import jakarta.validation.ValidationException;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
 import java.util.List;
 import java.util.Optional;
 
+@Slf4j
 @Service
 public class PlanService {
 
@@ -36,7 +38,9 @@ public class PlanService {
     @Transactional
     public Plan update(Plan plans){
         Plan plan = findById(plans.getId());
-        return this.planRepository.save(plan);
+        Plan saved = this.planRepository.save(plan);
+        log.info("Plan {} updated", saved.getName());
+        return saved;
     }
 
     @Transactional
@@ -45,11 +49,14 @@ public class PlanService {
             throw new EntityIdNotExistsOrDelete("Este plano não existe ou já foi excluso!");
         }
         planRepository.deleteById(id);
+        log.info("Plan {} deleted", id);
     }
 
     @Transactional
     public Plan save(Plan plan){
-        return this.planRepository.save(plan);
+        Plan saved = this.planRepository.save(plan);
+        log.info("Plan created: {}", saved.getName());
+        return saved;
     }
 
 }
