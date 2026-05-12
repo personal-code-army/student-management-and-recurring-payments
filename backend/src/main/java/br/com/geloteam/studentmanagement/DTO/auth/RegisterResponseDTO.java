@@ -3,6 +3,7 @@ package br.com.geloteam.studentmanagement.DTO.auth;
 import br.com.geloteam.studentmanagement.Models.User;
 
 public record RegisterResponseDTO(
+        Long id,
         String name,
         String email,
         String cellphoneNumber,
@@ -10,6 +11,7 @@ public record RegisterResponseDTO(
 ) {
     public RegisterResponseDTO(User user) {
         this(
+                user.getId(),
                 user.getName(),
                 user.getEmail(),
                 user.getCellphoneNumber(),
