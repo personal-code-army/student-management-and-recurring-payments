@@ -1,0 +1,63 @@
+### Create payment
+POST http://localhost:8080/api/payments
+Authorization: Bearer {{token}}
+Content-Type: application/json
+
+{
+  "description": "Mensalidade Janeiro",
+  "value": 99.90,
+  "paymentMethod": "Pix",
+  "dueDate": "2025-01-10",
+  "issueDate": null,
+  "status": "A receber",
+  "subscriptionId": 1
+}
+
+###
+
+### List all payments
+GET http://localhost:8080/api/payments
+Authorization: Bearer {{token}}
+
+###
+
+### Filter by subscription
+GET http://localhost:8080/api/payments?subscriptionId=1
+Authorization: Bearer {{token}}
+
+###
+
+### Filter by student name
+GET http://localhost:8080/api/payments?studentName=João
+Authorization: Bearer {{token}}
+
+###
+
+### Get payment by ID
+GET http://localhost:8080/api/payments/1
+Authorization: Bearer {{token}}
+
+###
+
+### Update payment
+PUT http://localhost:8080/api/payments/1
+Authorization: Bearer {{token}}
+Content-Type: application/json
+
+{
+  "description": "Mensalidade Janeiro - Pago",
+  "value": 99.90,
+  "paymentMethod": "Pix",
+  "dueDate": "2025-01-10",
+  "issueDate": "2025-01-08",
+  "status": "Pago",
+  "subscriptionId": 1
+}
+
+###
+
+### Delete payment
+DELETE http://localhost:8080/api/payments/1
+Authorization: Bearer {{token}}
+
+###

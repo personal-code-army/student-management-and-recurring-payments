@@ -1,0 +1,24 @@
+### List all users
+GET http://localhost:8080/api/users
+Authorization: Bearer {{token}}
+
+###
+
+### Update user
+PUT http://localhost:8080/api/users/1
+Authorization: Bearer {{token}}
+Content-Type: application/json
+
+{
+  "name": "Nome Atualizado",
+  "cellphoneNumber": "11988888888",
+  "companyId": 1
+}
+
+###
+
+### Delete user
+DELETE http://localhost:8080/api/users/1
+Authorization: Bearer {{token}}
+
+###

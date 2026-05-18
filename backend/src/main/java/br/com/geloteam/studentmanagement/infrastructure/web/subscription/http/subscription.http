@@ -1,0 +1,53 @@
+### Create subscription
+POST http://localhost:8080/api/subscriptions
+Authorization: Bearer {{token}}
+Content-Type: application/json
+
+{
+  "startDate": "2025-01-01",
+  "status": "Ativo",
+  "paymentMethod": "Pix",
+  "planId": 1,
+  "studentId": 1
+}
+
+###
+
+### List all subscriptions
+GET http://localhost:8080/api/subscriptions
+Authorization: Bearer {{token}}
+
+###
+
+### Filter by student name
+GET http://localhost:8080/api/subscriptions?studentName=João
+Authorization: Bearer {{token}}
+
+###
+
+### Get subscription by ID
+GET http://localhost:8080/api/subscriptions/1
+Authorization: Bearer {{token}}
+
+###
+
+### Update subscription
+PUT http://localhost:8080/api/subscriptions/1
+Authorization: Bearer {{token}}
+Content-Type: application/json
+
+{
+  "startDate": "2025-02-01",
+  "status": "Ativo",
+  "paymentMethod": "Cartão",
+  "planId": 1,
+  "studentId": 1
+}
+
+###
+
+### Delete subscription
+DELETE http://localhost:8080/api/subscriptions/1
+Authorization: Bearer {{token}}
+
+###
