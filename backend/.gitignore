@@ -3,6 +3,7 @@ target/
 
 ### Logs ###
 *.log
+logs/
 
 ### Java ###
 *.class
