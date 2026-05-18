@@ -15,7 +15,8 @@ export default function SettingsPage() {
   useEffect(() => {
     async function fetchUser() {
       try {
-        const res = await fetch("http://localhost:8080/api/user");
+        const res = await fetch("/api/auth/me");
+        if (!res.ok) throw new Error(`HTTP ${res.status}`);
         const data = await res.json();
         setUser(data);
       } catch (error) {
@@ -65,9 +66,9 @@ export default function SettingsPage() {
           <CardContent className="space-y-2">
             {user ? (
               <>
-                <p><strong>Nome:</strong> {user.nome}</p>
-                <p><strong>Email:</strong> {user.email}</p>
-                <p><strong>Telefone:</strong> {user.telefone}</p>
+                <p> <strong> Nome : </strong> { user.name } </p>​​​​​​​​​ 
+                <p> <strong> E - mail : </strong> { user.email } </p>​​​​​​​ 
+                <p> <strong> Telefone : </strong> { user.cellphoneNumber } </p>​​​​​​​​​ 
               </>
             ) : (
               <p className="text-zinc-500">
