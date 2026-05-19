@@ -15,7 +15,7 @@ hs_err_pid*
 *.iws
 *.iml
 *.ipr
-out/
+/out/
 
 ### Eclipse / STS ###
 .apt_generated
