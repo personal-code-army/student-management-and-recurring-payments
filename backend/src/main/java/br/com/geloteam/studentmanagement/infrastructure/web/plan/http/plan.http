@@ -1,0 +1,43 @@
+### Create plan
+POST http://localhost:8080/api/plans
+Authorization: Bearer {{token}}
+Content-Type: application/json
+
+{
+  "name": "Plano Mensal",
+  "monthlyAmount": 99.90,
+  "frequency": 1
+}
+
+###
+
+### List all plans
+GET http://localhost:8080/api/plans
+Authorization: Bearer {{token}}
+
+###
+
+### Get plan by ID
+GET http://localhost:8080/api/plans/1
+Authorization: Bearer {{token}}
+
+###
+
+### Update plan
+PUT http://localhost:8080/api/plans/1
+Authorization: Bearer {{token}}
+Content-Type: application/json
+
+{
+  "name": "Plano Mensal Atualizado",
+  "monthlyAmount": 109.90,
+  "frequency": 1
+}
+
+###
+
+### Delete plan
+DELETE http://localhost:8080/api/plans/1
+Authorization: Bearer {{token}}
+
+###
