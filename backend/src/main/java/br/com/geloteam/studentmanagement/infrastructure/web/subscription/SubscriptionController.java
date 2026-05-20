@@ -1,7 +1,5 @@
 package br.com.geloteam.studentmanagement.infrastructure.web.subscription;
 
-import br.com.geloteam.studentmanagement.domain.plan.entity.Plan;
-import br.com.geloteam.studentmanagement.domain.student.entity.Student;
 import br.com.geloteam.studentmanagement.domain.subscription.entity.Subscription;
 import br.com.geloteam.studentmanagement.domain.subscription.port.in.DeleteSubscriptionUseCase;
 import br.com.geloteam.studentmanagement.domain.subscription.port.in.FindSubscriptionUseCase;
@@ -72,18 +70,12 @@ public class SubscriptionController {
     }
 
     private Subscription toEntity(SubscriptionRequest request) {
-        Student student = new Student();
-        student.setId(request.studentId());
-
-        Plan plan = new Plan();
-        plan.setId(request.planId());
-
         Subscription subscription = new Subscription();
         subscription.setStartDate(request.startDate());
         subscription.setStatus(request.status());
         subscription.setPaymentMethod(request.paymentMethod());
-        subscription.setStudent(student);
-        subscription.setPlan(plan);
+        subscription.setStudentId(request.studentId());
+        subscription.setPlanId(request.planId());
         return subscription;
     }
 }

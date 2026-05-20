@@ -53,8 +53,8 @@ public class SubscriptionUseCaseImpl implements SaveSubscriptionUseCase, UpdateS
     @Override
     @Transactional
     public Subscription execute(Subscription subscription) {
-        var student = studentRepository.findById(subscription.getStudent().getId())
-                .orElseThrow(() -> new NotFoundException("Aluno não encontrado com ID: " + subscription.getStudent().getId()));
+        var student = studentRepository.findById(subscription.getStudentId())
+                .orElseThrow(() -> new NotFoundException("Aluno não encontrado com ID: " + subscription.getStudentId()));
 
         if (subscriptionRepository.existsByStudentIdAndStatus(student.getId(), "Ativo")) {
             log.warn("Subscription not created: student {} already has an active subscription", student.getId());
@@ -63,7 +63,7 @@ public class SubscriptionUseCaseImpl implements SaveSubscriptionUseCase, UpdateS
 
         Subscription saved = subscriptionRepository.save(subscription);
         paymentUseCase.generatePaymentForSubscription(saved);
-        log.info("Subscription created for student {}, plan {}", student.getId(), saved.getPlan().getId());
+        log.info("Subscription created for student {}, plan {}", student.getId(), saved.getPlanId());
         return saved;
     }
 
@@ -75,7 +75,7 @@ public class SubscriptionUseCaseImpl implements SaveSubscriptionUseCase, UpdateS
         subscription.setStartDate(incoming.getStartDate());
         subscription.setStatus(incoming.getStatus());
         subscription.setPaymentMethod(incoming.getPaymentMethod());
-        subscription.setPlan(incoming.getPlan());
+        subscription.setPlanId(incoming.getPlanId());
 
         Subscription saved = subscriptionRepository.save(subscription);
 

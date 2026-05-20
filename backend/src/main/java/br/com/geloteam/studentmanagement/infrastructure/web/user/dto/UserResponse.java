@@ -9,7 +9,7 @@ public record UserResponse(Long id, String name, String email, String cellphoneN
                 user.getName(),
                 user.getEmail(),
                 user.getCellphoneNumber(),
-                user.getCompany().getId()
+                user.getCompanyId()
         );
     }
 }

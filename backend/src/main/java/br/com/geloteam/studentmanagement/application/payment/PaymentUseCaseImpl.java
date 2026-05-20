@@ -6,6 +6,8 @@ import br.com.geloteam.studentmanagement.domain.payment.port.in.FindPaymentUseCa
 import br.com.geloteam.studentmanagement.domain.payment.port.in.SavePaymentUseCase;
 import br.com.geloteam.studentmanagement.domain.payment.port.in.UpdatePaymentUseCase;
 import br.com.geloteam.studentmanagement.domain.payment.port.out.PaymentRepositoryPort;
+import br.com.geloteam.studentmanagement.domain.plan.entity.Plan;
+import br.com.geloteam.studentmanagement.domain.plan.port.out.PlanRepositoryPort;
 import br.com.geloteam.studentmanagement.domain.subscription.entity.Subscription;
 import br.com.geloteam.studentmanagement.shared.exception.NotFoundException;
 import jakarta.transaction.Transactional;
@@ -20,9 +22,11 @@ import java.util.List;
 public class PaymentUseCaseImpl implements SavePaymentUseCase, UpdatePaymentUseCase, DeletePaymentUseCase, FindPaymentUseCase {
 
     private final PaymentRepositoryPort paymentRepository;
+    private final PlanRepositoryPort planRepository;
 
-    public PaymentUseCaseImpl(PaymentRepositoryPort paymentRepository) {
+    public PaymentUseCaseImpl(PaymentRepositoryPort paymentRepository, PlanRepositoryPort planRepository) {
         this.paymentRepository = paymentRepository;
+        this.planRepository = planRepository;
     }
 
     @Override
@@ -81,14 +85,17 @@ public class PaymentUseCaseImpl implements SavePaymentUseCase, UpdatePaymentUseC
 
     @Transactional
     public Payment generatePaymentForSubscription(Subscription subscription) {
+        Plan plan = planRepository.findById(subscription.getPlanId())
+                .orElseThrow(() -> new NotFoundException("Plano não encontrado com ID: " + subscription.getPlanId()));
+
         Payment payment = new Payment();
-        payment.setDescription("Assinatura | " + subscription.getPlan().getName());
-        payment.setValue(subscription.getPlan().getMonthlyAmount());
+        payment.setDescription("Assinatura | " + plan.getName());
+        payment.setValue(plan.getMonthlyAmount());
         payment.setPaymentMethod(subscription.getPaymentMethod());
         payment.setDueDate(LocalDate.now());
         payment.setIssueDate(null);
         payment.setStatus("A receber");
-        payment.setSubscription(subscription);
+        payment.setSubscriptionId(subscription.getId());
 
         Payment saved = paymentRepository.save(payment);
         log.info("Payment generated for subscription {}, due: {}", subscription.getId(), saved.getDueDate());

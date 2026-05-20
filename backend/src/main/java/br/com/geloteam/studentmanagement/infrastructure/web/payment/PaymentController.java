@@ -5,7 +5,6 @@ import br.com.geloteam.studentmanagement.domain.payment.port.in.DeletePaymentUse
 import br.com.geloteam.studentmanagement.domain.payment.port.in.FindPaymentUseCase;
 import br.com.geloteam.studentmanagement.domain.payment.port.in.SavePaymentUseCase;
 import br.com.geloteam.studentmanagement.domain.payment.port.in.UpdatePaymentUseCase;
-import br.com.geloteam.studentmanagement.domain.subscription.entity.Subscription;
 import br.com.geloteam.studentmanagement.infrastructure.web.payment.dto.PaymentRequest;
 import br.com.geloteam.studentmanagement.shared.web.ApiResponse;
 import jakarta.validation.Valid;
@@ -77,9 +76,6 @@ public class PaymentController {
     }
 
     private Payment toEntity(PaymentRequest request) {
-        Subscription subscription = new Subscription();
-        subscription.setId(request.subscriptionId());
-
         Payment payment = new Payment();
         payment.setDescription(request.description());
         payment.setValue(request.value());
@@ -87,7 +83,7 @@ public class PaymentController {
         payment.setDueDate(request.dueDate());
         payment.setIssueDate(request.issueDate());
         payment.setStatus(request.status());
-        payment.setSubscription(subscription);
+        payment.setSubscriptionId(request.subscriptionId());
         return payment;
     }
 }

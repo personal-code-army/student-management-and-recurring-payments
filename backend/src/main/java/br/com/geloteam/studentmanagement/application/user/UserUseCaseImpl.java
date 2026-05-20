@@ -41,7 +41,7 @@ public class UserUseCaseImpl implements FindUserUseCase, UpdateUserUseCase, Dele
 
         user.setName(name);
         user.setCellphoneNumber(cellphoneNumber);
-        user.setCompany(company);
+        user.setCompanyId(company.getId());
 
         User saved = userRepository.save(user);
         log.info("User {} updated", saved.getId());

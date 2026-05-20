@@ -37,21 +37,20 @@ class UserUseCaseImplTest {
         return company;
     }
 
-    private User buildUser(Long id, Company company) {
+    private User buildUser(Long id, Long companyId) {
         User user = new User();
         user.setId(id);
         user.setName("Vitor");
         user.setEmail("vitor@email.com");
-        user.setCompany(company);
+        user.setCompanyId(companyId);
         return user;
     }
 
     @Test
     @DisplayName("Should return all users")
     void findAllShouldReturnUserList() {
-        Company company = buildCompany(1L);
-        User user1 = buildUser(1L, company);
-        User user2 = buildUser(2L, company);
+        User user1 = buildUser(1L, 1L);
+        User user2 = buildUser(2L, 1L);
         user2.setName("John");
 
         when(userRepository.findAll()).thenReturn(List.of(user1, user2));
@@ -71,7 +70,7 @@ class UserUseCaseImplTest {
         Long userId = 1L;
         Long companyId = 10L;
         Company company = buildCompany(companyId);
-        User existingUser = buildUser(userId, buildCompany(1L));
+        User existingUser = buildUser(userId, 1L);
 
         when(userRepository.findById(userId)).thenReturn(Optional.of(existingUser));
         when(companyRepository.findById(companyId)).thenReturn(Optional.of(company));
@@ -82,7 +81,7 @@ class UserUseCaseImplTest {
         assertNotNull(result);
         assertEquals("Vitor Gonzalez", result.getName());
         assertEquals("11999999999", result.getCellphoneNumber());
-        assertEquals(company, result.getCompany());
+        assertEquals(companyId, result.getCompanyId());
         verify(userRepository).save(existingUser);
     }
 
@@ -101,8 +100,7 @@ class UserUseCaseImplTest {
     @Test
     @DisplayName("Should delete user and return deleted user when ID exists")
     void deleteShouldRemoveUserAndReturnIt() {
-        Company company = buildCompany(10L);
-        User user = buildUser(1L, company);
+        User user = buildUser(1L, 10L);
 
         when(userRepository.findById(1L)).thenReturn(Optional.of(user));
 
@@ -110,7 +108,7 @@ class UserUseCaseImplTest {
 
         assertNotNull(result);
         assertEquals(1L, result.getId());
-        assertEquals(10L, result.getCompany().getId());
+        assertEquals(10L, result.getCompanyId());
         verify(userRepository).delete(user);
     }
 
