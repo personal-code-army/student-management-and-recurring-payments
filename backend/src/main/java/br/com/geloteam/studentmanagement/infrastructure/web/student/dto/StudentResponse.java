@@ -1,6 +1,5 @@
 package br.com.geloteam.studentmanagement.infrastructure.web.student.dto;
 
-import br.com.geloteam.studentmanagement.domain.plan.entity.Plan;
 import br.com.geloteam.studentmanagement.domain.student.entity.Student;
 
 import java.time.LocalDate;
@@ -15,7 +14,7 @@ public record StudentResponse(
         String phone,
         String email,
         String address,
-        Plan plan,
+        Long planId,
         boolean active
 ) {
     public static StudentResponse from(Student s) {
@@ -29,7 +28,7 @@ public record StudentResponse(
                 s.getPhone(),
                 s.getEmail(),
                 s.getAddress(),
-                s.getPlan(),
+                s.getPlanId(),
                 s.isActive()
         );
     }

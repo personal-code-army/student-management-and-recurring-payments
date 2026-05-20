@@ -30,10 +30,9 @@ public class CreateStudentUseCaseImpl implements CreateStudentUseCase {
             throw new ConflictException("CPF_ALREADY_REGISTERED", "CPF já cadastrado: " + student.getCpf());
         }
 
-        if (student.getPlan() != null && student.getPlan().getId() != null) {
-            var plan = planRepository.findById(student.getPlan().getId())
-                    .orElseThrow(() -> new NotFoundException("Plano não encontrado com ID: " + student.getPlan().getId()));
-            student.setPlan(plan);
+        if (student.getPlanId() != null) {
+            planRepository.findById(student.getPlanId())
+                    .orElseThrow(() -> new NotFoundException("Plano não encontrado com ID: " + student.getPlanId()));
         }
 
         Student saved = studentRepository.save(student);

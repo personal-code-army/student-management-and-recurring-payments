@@ -5,6 +5,8 @@ import br.com.geloteam.studentmanagement.domain.user.entity.User;
 import br.com.geloteam.studentmanagement.domain.user.entity.UserRole;
 import br.com.geloteam.studentmanagement.domain.user.port.out.CompanyRepositoryPort;
 import br.com.geloteam.studentmanagement.domain.user.port.out.UserRepositoryPort;
+import br.com.geloteam.studentmanagement.infrastructure.persistence.user.UserJpaEntity;
+import br.com.geloteam.studentmanagement.infrastructure.persistence.user.UserJpaRepository;
 import br.com.geloteam.studentmanagement.shared.exception.ConflictException;
 import br.com.geloteam.studentmanagement.shared.exception.UnauthorizedException;
 import org.junit.jupiter.api.DisplayName;
@@ -39,6 +41,9 @@ class AuthUseCaseImplTest {
     private CompanyRepositoryPort companyRepository;
 
     @Mock
+    private UserJpaRepository userJpaRepository;
+
+    @Mock
     private AuthenticationManager authenticationManager;
 
     @Mock
@@ -53,34 +58,41 @@ class AuthUseCaseImplTest {
     private final String EMAIL = "vitor@geloteam.com.br";
 
     private User buildUser() {
-        Company company = new Company();
-        company.setId(1L);
-
         User user = new User();
         user.setId(1L);
         user.setName("Vitor");
         user.setEmail(EMAIL);
-        user.setCompany(company);
+        user.setCompanyId(1L);
         return user;
+    }
+
+    private UserJpaEntity buildUserJpaEntity() {
+        UserJpaEntity entity = new UserJpaEntity();
+        entity.setId(1L);
+        entity.setName("Vitor");
+        entity.setEmail(EMAIL);
+        entity.setPassword("encoded");
+        entity.setRole(UserRole.USER);
+        return entity;
     }
 
     @Test
     @DisplayName("Should return UserDetails when user exists")
     void shouldLoadUserByUsernameSuccess() {
-        User mockUser = buildUser();
-        when(userRepository.findByEmail(EMAIL)).thenReturn(Optional.of(mockUser));
+        UserJpaEntity mockEntity = buildUserJpaEntity();
+        when(userJpaRepository.findUserByEmail(EMAIL)).thenReturn(Optional.of(mockEntity));
 
         UserDetails result = authUseCase.loadUserByUsername(EMAIL);
 
         assertNotNull(result);
         assertEquals(EMAIL, result.getUsername());
-        verify(userRepository).findByEmail(EMAIL);
+        verify(userJpaRepository).findUserByEmail(EMAIL);
     }
 
     @Test
     @DisplayName("Should throw UsernameNotFoundException when user does not exist")
     void shouldThrowExceptionWhenUserNotFound() {
-        when(userRepository.findByEmail(EMAIL)).thenReturn(Optional.empty());
+        when(userJpaRepository.findUserByEmail(EMAIL)).thenReturn(Optional.empty());
 
         assertThrows(UsernameNotFoundException.class, () -> authUseCase.loadUserByUsername(EMAIL));
     }

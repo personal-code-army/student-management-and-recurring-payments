@@ -41,12 +41,12 @@ public class UpdateStudentUseCaseImpl implements UpdateStudentUseCase {
         student.setAddress(incoming.getAddress());
         student.setActive(incoming.isActive());
 
-        if (incoming.getPlan() != null && incoming.getPlan().getId() != null) {
-            var plan = planRepository.findById(incoming.getPlan().getId())
-                    .orElseThrow(() -> new NotFoundException("Plano não encontrado com ID: " + incoming.getPlan().getId()));
-            student.setPlan(plan);
+        if (incoming.getPlanId() != null) {
+            planRepository.findById(incoming.getPlanId())
+                    .orElseThrow(() -> new NotFoundException("Plano não encontrado com ID: " + incoming.getPlanId()));
+            student.setPlanId(incoming.getPlanId());
         } else {
-            student.setPlan(null);
+            student.setPlanId(null);
         }
 
         Student saved = studentRepository.save(student);

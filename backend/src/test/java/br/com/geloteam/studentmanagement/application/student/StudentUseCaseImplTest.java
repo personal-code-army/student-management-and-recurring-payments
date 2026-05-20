@@ -261,7 +261,7 @@ class StudentUseCaseImplTest {
         plan.setName("Mensal");
 
         Student student = buildStudent();
-        student.setPlan(plan);
+        student.setPlanId(2L);
 
         when(studentRepository.existsByCpf("12345678901")).thenReturn(false);
         when(planRepository.findById(2L)).thenReturn(Optional.of(plan));
@@ -269,8 +269,8 @@ class StudentUseCaseImplTest {
 
         Student result = createStudentUseCase.execute(student);
 
-        assertNotNull(result.getPlan());
-        assertEquals("Mensal", result.getPlan().getName());
+        assertNotNull(result.getPlanId());
+        assertEquals(2L, result.getPlanId());
         verify(planRepository).findById(2L);
     }
 
@@ -278,7 +278,7 @@ class StudentUseCaseImplTest {
     @DisplayName("Should not look up plan when plan is null on create")
     void createShouldNotCallPlanRepoWhenPlanIsNull() {
         Student student = buildStudent();
-        student.setPlan(null);
+        student.setPlanId(null);
 
         when(studentRepository.existsByCpf("12345678901")).thenReturn(false);
         when(studentRepository.save(any(Student.class))).thenAnswer(inv -> inv.getArgument(0));

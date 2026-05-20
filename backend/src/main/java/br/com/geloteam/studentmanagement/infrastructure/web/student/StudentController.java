@@ -1,6 +1,5 @@
 package br.com.geloteam.studentmanagement.infrastructure.web.student;
 
-import br.com.geloteam.studentmanagement.domain.plan.entity.Plan;
 import br.com.geloteam.studentmanagement.domain.student.entity.Student;
 import br.com.geloteam.studentmanagement.domain.student.port.in.CreateStudentUseCase;
 import br.com.geloteam.studentmanagement.domain.student.port.in.DeleteStudentUseCase;
@@ -107,11 +106,7 @@ public class StudentController {
         student.setEmail(request.email());
         student.setAddress(request.address());
         student.setActive(request.active());
-        if (request.planId() != null) {
-            Plan plan = new Plan();
-            plan.setId(request.planId());
-            student.setPlan(plan);
-        }
+        student.setPlanId(request.planId());
         return student;
     }
 }

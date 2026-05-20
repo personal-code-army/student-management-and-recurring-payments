@@ -7,6 +7,7 @@ import br.com.geloteam.studentmanagement.domain.user.port.in.MeUseCase;
 import br.com.geloteam.studentmanagement.domain.user.port.in.RegisterUseCase;
 import br.com.geloteam.studentmanagement.domain.user.port.out.CompanyRepositoryPort;
 import br.com.geloteam.studentmanagement.domain.user.port.out.UserRepositoryPort;
+import br.com.geloteam.studentmanagement.infrastructure.persistence.user.UserJpaRepository;
 import br.com.geloteam.studentmanagement.shared.exception.ConflictException;
 import br.com.geloteam.studentmanagement.shared.exception.NotFoundException;
 import br.com.geloteam.studentmanagement.shared.exception.UnauthorizedException;
@@ -33,17 +34,20 @@ public class AuthUseCaseImpl implements LoginUseCase, RegisterUseCase, MeUseCase
 
     private final UserRepositoryPort userRepository;
     private final CompanyRepositoryPort companyRepository;
+    private final UserJpaRepository userJpaRepository;
     private final AuthenticationManager authenticationManager;
     private final TokenService tokenService;
     private final PasswordEncoder passwordEncoder;
 
     public AuthUseCaseImpl(UserRepositoryPort userRepository,
                            CompanyRepositoryPort companyRepository,
+                           UserJpaRepository userJpaRepository,
                            @Lazy AuthenticationManager authenticationManager,
                            TokenService tokenService,
                            PasswordEncoder passwordEncoder) {
         this.userRepository = userRepository;
         this.companyRepository = companyRepository;
+        this.userJpaRepository = userJpaRepository;
         this.authenticationManager = authenticationManager;
         this.tokenService = tokenService;
         this.passwordEncoder = passwordEncoder;
@@ -51,7 +55,7 @@ public class AuthUseCaseImpl implements LoginUseCase, RegisterUseCase, MeUseCase
 
     @Override
     public UserDetails loadUserByUsername(String email) throws UsernameNotFoundException {
-        return userRepository.findByEmail(email)
+        return userJpaRepository.findUserByEmail(email)
                 .orElseThrow(() -> {
                     log.warn("Login failed: user not found with email '{}'", maskEmail(email));
                     return new UsernameNotFoundException("User not found with email: " + maskEmail(email));
@@ -78,7 +82,7 @@ public class AuthUseCaseImpl implements LoginUseCase, RegisterUseCase, MeUseCase
                 .orElseThrow(() -> new NotFoundException("Company não encontrada com ID: " + companyId));
 
         user.setPassword(passwordEncoder.encode(rawPassword));
-        user.setCompany(company);
+        user.setCompanyId(company.getId());
         user.setRole(UserRole.USER);
 
         User saved = userRepository.save(user);
