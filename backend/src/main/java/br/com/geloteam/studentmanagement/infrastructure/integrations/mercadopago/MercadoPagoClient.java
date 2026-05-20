@@ -6,15 +6,15 @@ import br.com.geloteam.studentmanagement.infrastructure.integrations.mercadopago
 import br.com.geloteam.studentmanagement.shared.exception.AppException;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.boot.context.properties.EnableConfigurationProperties;
-import org.springframework.context.annotation.Configuration;
 import org.springframework.http.HttpStatusCode;
 import org.springframework.http.MediaType;
 import org.springframework.stereotype.Component;
 import org.springframework.web.client.RestClient;
 
+import java.nio.charset.StandardCharsets;
+
 @Slf4j
 @Component
-@Configuration
 @EnableConfigurationProperties(MercadoPagoProperties.class)
 public class MercadoPagoClient {
 
@@ -37,10 +37,11 @@ public class MercadoPagoClient {
                     .body(request)
                     .retrieve()
                     .onStatus(HttpStatusCode::isError, (req, res) -> {
-                        log.error("Mercado Pago createPreference failed: status={} body={}",
-                                res.getStatusCode(), new String(res.getBody().readAllBytes()));
+                        String responseBody = new String(res.getBody().readAllBytes(), StandardCharsets.UTF_8);
+                        int status = res.getStatusCode().value();
+                        log.error("Mercado Pago createPreference failed: status={} body={}", status, responseBody);
                         throw new MercadoPagoApiException("MP_CREATE_PREFERENCE_FAILED",
-                                "Falha ao criar preferência no Mercado Pago");
+                                "Falha ao criar preferência no Mercado Pago (status=" + status + "): " + responseBody);
                     })
                     .body(PreferenceResponse.class);
         } catch (MercadoPagoApiException e) {
@@ -48,7 +49,7 @@ public class MercadoPagoClient {
         } catch (Exception e) {
             log.error("Mercado Pago createPreference unexpected error", e);
             throw new MercadoPagoApiException("MP_UNEXPECTED_ERROR",
-                    "Erro inesperado ao contatar o Mercado Pago");
+                    "Erro inesperado ao contatar o Mercado Pago: " + e.getMessage());
         }
     }
 
@@ -58,9 +59,11 @@ public class MercadoPagoClient {
                     .uri("/v1/payments/{id}", paymentId)
                     .retrieve()
                     .onStatus(HttpStatusCode::isError, (req, res) -> {
-                        log.error("Mercado Pago fetchPayment failed: status={}", res.getStatusCode());
+                        String responseBody = new String(res.getBody().readAllBytes(), StandardCharsets.UTF_8);
+                        int status = res.getStatusCode().value();
+                        log.error("Mercado Pago fetchPayment failed: status={} body={}", status, responseBody);
                         throw new MercadoPagoApiException("MP_FETCH_PAYMENT_FAILED",
-                                "Falha ao consultar pagamento no Mercado Pago");
+                                "Falha ao consultar pagamento no Mercado Pago (status=" + status + "): " + responseBody);
                     })
                     .body(MpPaymentResource.class);
         } catch (MercadoPagoApiException e) {
@@ -68,7 +71,7 @@ public class MercadoPagoClient {
         } catch (Exception e) {
             log.error("Mercado Pago fetchPayment unexpected error", e);
             throw new MercadoPagoApiException("MP_UNEXPECTED_ERROR",
-                    "Erro inesperado ao contatar o Mercado Pago");
+                    "Erro inesperado ao contatar o Mercado Pago: " + e.getMessage());
         }
     }
 

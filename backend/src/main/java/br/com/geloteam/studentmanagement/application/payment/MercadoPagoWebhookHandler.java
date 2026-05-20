@@ -13,7 +13,6 @@ import org.springframework.stereotype.Service;
 import javax.crypto.Mac;
 import javax.crypto.spec.SecretKeySpec;
 import java.nio.charset.StandardCharsets;
-import java.util.Locale;
 import java.util.Map;
 import java.util.Optional;
 
@@ -49,7 +48,13 @@ public class MercadoPagoWebhookHandler {
             return;
         }
 
-        MpPaymentResource mpPayment = mercadoPagoClient.fetchPayment(dataId);
+        MpPaymentResource mpPayment;
+        try {
+            mpPayment = mercadoPagoClient.fetchPayment(dataId);
+        } catch (Exception e) {
+            log.error("fetchPayment failed for {}: {}", dataId, e.getMessage(), e);
+            return;
+        }
         if (mpPayment.external_reference() == null) {
             log.warn("Webhook payment {} has no external_reference; ignoring", dataId);
             return;
@@ -87,8 +92,8 @@ public class MercadoPagoWebhookHandler {
     private void verifySignature(String signatureHeader, String requestId, String dataId) {
         String secret = props.webhookSecret();
         if (secret == null || secret.isBlank()) {
-            log.warn("MERCADOPAGO_WEBHOOK_SECRET not set; skipping signature validation");
-            return;
+            throw new IllegalStateException(
+                    "MERCADOPAGO_WEBHOOK_SECRET is not configured; webhook rejected");
         }
         if (signatureHeader == null || signatureHeader.isBlank()) {
             throw new UnauthorizedException("MP_WEBHOOK_MISSING_SIGNATURE",
@@ -101,7 +106,7 @@ public class MercadoPagoWebhookHandler {
             throw new UnauthorizedException("MP_WEBHOOK_INVALID_SIGNATURE",
                     "Formato de assinatura do webhook inválido");
         }
-        String manifest = "id:" + dataId.toLowerCase(Locale.ROOT) + ";"
+        String manifest = "id:" + dataId + ";"
                 + (requestId != null ? "request-id:" + requestId + ";" : "")
                 + "ts:" + ts + ";";
         String expected = hmacSha256Hex(secret, manifest);
@@ -131,7 +136,9 @@ public class MercadoPagoWebhookHandler {
             for (byte b : raw) hex.append(String.format("%02x", b));
             return hex.toString();
         } catch (Exception e) {
-            throw new UnauthorizedException("MP_WEBHOOK_HMAC_ERROR", "Falha ao calcular HMAC");
+            log.error("HMAC calculation failed", e);
+            throw new UnauthorizedException("MP_WEBHOOK_HMAC_ERROR",
+                    "Falha ao calcular HMAC: " + e.getMessage());
         }
     }
 

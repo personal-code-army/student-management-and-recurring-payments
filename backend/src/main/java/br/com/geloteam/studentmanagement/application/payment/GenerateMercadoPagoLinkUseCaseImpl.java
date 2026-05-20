@@ -23,6 +23,7 @@ import java.time.OffsetDateTime;
 import java.time.ZoneOffset;
 import java.time.format.DateTimeFormatter;
 import java.util.List;
+import java.util.UUID;
 
 @Slf4j
 @Service
@@ -62,18 +63,10 @@ public class GenerateMercadoPagoLinkUseCaseImpl implements GenerateMercadoPagoLi
         Plan plan = planRepository.findById(subscription.getPlanId())
                 .orElseThrow(() -> new NotFoundException("Plano não encontrado com ID: " + subscription.getPlanId()));
 
-        String externalReference = "SUB-" + subscription.getId() + "-" + System.currentTimeMillis();
+        String externalReference = "SUB-" + subscription.getId() + "-"
+                + UUID.randomUUID().toString().replace("-", "").substring(0, 12);
         OffsetDateTime expiration = OffsetDateTime.now(ZoneOffset.UTC).plusDays(LINK_EXPIRATION_DAYS);
         String expirationStr = expiration.format(DateTimeFormatter.ofPattern("yyyy-MM-dd'T'HH:mm:ss.SSSXXX"));
-
-        PreferenceRequest request = new PreferenceRequest(
-                List.of(new PreferenceItem(plan.getName(), 1, "BRL", plan.getMonthlyAmount())),
-                externalReference,
-                mpProperties.notificationUrl(),
-                expirationStr
-        );
-
-        PreferenceResponse mpResponse = mercadoPagoClient.createPreference(request);
 
         Payment payment = new Payment();
         payment.setSubscriptionId(subscription.getId());
@@ -83,13 +76,22 @@ public class GenerateMercadoPagoLinkUseCaseImpl implements GenerateMercadoPagoLi
         payment.setDueDate(LocalDate.now().plusDays(LINK_EXPIRATION_DAYS));
         payment.setIssueDate(LocalDate.now());
         payment.setStatus("pending");
-        payment.setMercadoPagoPreferenceId(mpResponse.id());
-        payment.setCheckoutUrl(mpResponse.init_point());
         payment.setExternalReference(externalReference);
-
         Payment saved = paymentRepository.save(payment);
+
+        PreferenceRequest request = new PreferenceRequest(
+                List.of(new PreferenceItem(plan.getName(), 1, "BRL", plan.getMonthlyAmount())),
+                externalReference,
+                mpProperties.notificationUrl(),
+                expirationStr
+        );
+        PreferenceResponse mpResponse = mercadoPagoClient.createPreference(request);
+
+        saved.setMercadoPagoPreferenceId(mpResponse.id());
+        saved.setCheckoutUrl(mpResponse.init_point());
+        Payment finalPayment = paymentRepository.save(saved);
         log.info("Mercado Pago link generated for subscription {}, paymentId={}, preferenceId={}",
-                subscription.getId(), saved.getId(), mpResponse.id());
+                subscription.getId(), finalPayment.getId(), mpResponse.id());
 
         return new PaymentLinkResult(
                 mpResponse.init_point(),

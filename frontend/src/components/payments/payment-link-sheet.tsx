@@ -1,6 +1,6 @@
 "use client"
 
-import { useEffect, useState } from "react"
+import { useEffect, useRef, useState } from "react"
 import axios from "axios"
 import { Check, Copy, ExternalLink, Loader2 } from "lucide-react"
 
@@ -49,13 +49,16 @@ export function PaymentLinkSheet({
   const [error, setError] = useState<string | null>(null)
   const [result, setResult] = useState<GeneratePaymentLinkResponse | null>(null)
   const [copied, setCopied] = useState(false)
+  const requestIdRef = useRef(0)
 
   useEffect(() => {
     if (open) {
+      requestIdRef.current += 1
       setSubscriptionId(defaultSubscriptionId)
       setResult(null)
       setError(null)
       setCopied(false)
+      setLoading(false)
     }
   }, [open, defaultSubscriptionId])
 
@@ -65,12 +68,15 @@ export function PaymentLinkSheet({
       setError("Informe um ID de assinatura válido")
       return
     }
+    const myRequestId = ++requestIdRef.current
     setLoading(true)
     setError(null)
     try {
       const data = await generateMercadoPagoLink(id)
+      if (myRequestId !== requestIdRef.current) return
       setResult(data)
     } catch (err) {
+      if (myRequestId !== requestIdRef.current) return
       if (axios.isAxiosError(err)) {
         const status = err.response?.status
         if (status === 404) {
@@ -86,7 +92,7 @@ export function PaymentLinkSheet({
         setError("Erro ao gerar link. Tente novamente.")
       }
     } finally {
-      setLoading(false)
+      if (myRequestId === requestIdRef.current) setLoading(false)
     }
   }
 
