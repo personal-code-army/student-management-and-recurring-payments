@@ -13,4 +13,5 @@ public interface PaymentRepositoryPort {
     boolean existsById(Long id);
     List<Payment> findAllBySubscriptionId(Long subscriptionId);
     List<Payment> findAllBySubscriptionStudentName(String name);
+    Optional<Payment> findByExternalReference(String externalReference);
 }

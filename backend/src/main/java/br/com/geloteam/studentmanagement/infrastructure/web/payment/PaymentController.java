@@ -3,8 +3,11 @@ package br.com.geloteam.studentmanagement.infrastructure.web.payment;
 import br.com.geloteam.studentmanagement.domain.payment.entity.Payment;
 import br.com.geloteam.studentmanagement.domain.payment.port.in.DeletePaymentUseCase;
 import br.com.geloteam.studentmanagement.domain.payment.port.in.FindPaymentUseCase;
+import br.com.geloteam.studentmanagement.domain.payment.port.in.GenerateMercadoPagoLinkUseCase;
 import br.com.geloteam.studentmanagement.domain.payment.port.in.SavePaymentUseCase;
 import br.com.geloteam.studentmanagement.domain.payment.port.in.UpdatePaymentUseCase;
+import br.com.geloteam.studentmanagement.infrastructure.web.payment.dto.GeneratePaymentLinkRequest;
+import br.com.geloteam.studentmanagement.infrastructure.web.payment.dto.PaymentLinkResponse;
 import br.com.geloteam.studentmanagement.infrastructure.web.payment.dto.PaymentRequest;
 import br.com.geloteam.studentmanagement.shared.web.ApiResponse;
 import jakarta.validation.Valid;
@@ -22,15 +25,18 @@ public class PaymentController {
     private final UpdatePaymentUseCase updatePaymentUseCase;
     private final DeletePaymentUseCase deletePaymentUseCase;
     private final FindPaymentUseCase findPaymentUseCase;
+    private final GenerateMercadoPagoLinkUseCase generateMercadoPagoLinkUseCase;
 
     public PaymentController(SavePaymentUseCase savePaymentUseCase,
                              UpdatePaymentUseCase updatePaymentUseCase,
                              DeletePaymentUseCase deletePaymentUseCase,
-                             FindPaymentUseCase findPaymentUseCase) {
+                             FindPaymentUseCase findPaymentUseCase,
+                             GenerateMercadoPagoLinkUseCase generateMercadoPagoLinkUseCase) {
         this.savePaymentUseCase = savePaymentUseCase;
         this.updatePaymentUseCase = updatePaymentUseCase;
         this.deletePaymentUseCase = deletePaymentUseCase;
         this.findPaymentUseCase = findPaymentUseCase;
+        this.generateMercadoPagoLinkUseCase = generateMercadoPagoLinkUseCase;
     }
 
     @PostMapping
@@ -73,6 +79,20 @@ public class PaymentController {
     public ResponseEntity<ApiResponse<?>> delete(@PathVariable Long id) {
         deletePaymentUseCase.execute(id);
         return ResponseEntity.ok(ApiResponse.success());
+    }
+
+    @PostMapping("/mercadopago-link")
+    public ResponseEntity<ApiResponse<PaymentLinkResponse>> generateMercadoPagoLink(
+            @RequestBody @Valid GeneratePaymentLinkRequest request
+    ) {
+        GenerateMercadoPagoLinkUseCase.PaymentLinkResult result =
+                generateMercadoPagoLinkUseCase.execute(request.subscriptionId());
+        PaymentLinkResponse body = new PaymentLinkResponse(
+                result.checkoutUrl(),
+                result.expirationDate(),
+                result.externalReference()
+        );
+        return ResponseEntity.status(HttpStatus.CREATED).body(ApiResponse.data(body));
     }
 
     private Payment toEntity(PaymentRequest request) {

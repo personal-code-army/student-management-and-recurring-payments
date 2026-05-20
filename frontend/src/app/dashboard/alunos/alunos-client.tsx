@@ -18,8 +18,9 @@ import { AppSidebar } from "@/components/app-sidebar"
 import { Separator } from "@/components/ui/separator"
 import {
   Users, UserCheck, UserX, Clock, TrendingUp, Plus,
-  Phone, Pencil, Trash2, ChevronLeft, ChevronRight, Search,
+  Phone, Pencil, Trash2, ChevronLeft, ChevronRight, Search, Link2,
 } from "lucide-react"
+import { PaymentLinkSheet } from "@/components/payments/payment-link-sheet"
 
 interface Aluno {
   id: number
@@ -102,6 +103,7 @@ export function AlunosClient() {
   const [editando, setEditando]       = useState<Aluno | null>(null)
   const [deletandoId, setDeletandoId] = useState<number | null>(null)
   const [form, setForm]               = useState<FormState>(FORM_VAZIO)
+  const [linkSheetAluno, setLinkSheetAluno] = useState<Aluno | null>(null)
 
   const filtrados = useMemo(() => alunos
     .filter(a => busca === "" || a.nome.toLowerCase().includes(busca.toLowerCase()) || a.email.toLowerCase().includes(busca.toLowerCase()))
@@ -313,6 +315,14 @@ export function AlunosClient() {
                               <Phone className="h-3.5 w-3.5" />
                             </a>
                             <button
+                              onClick={() => setLinkSheetAluno(aluno)}
+                              aria-label={`Gerar link de pagamento para ${aluno.nome}`}
+                              title="Gerar link de pagamento"
+                              className="inline-flex h-7 w-7 items-center justify-center rounded-md border border-[#FFFFFF]/15 text-[#FFFFFF]/60 transition-colors hover:border-[#DD050A]/40 hover:bg-[#DD050A]/10 hover:text-[#FFFFFF]"
+                            >
+                              <Link2 className="h-3.5 w-3.5" />
+                            </button>
+                            <button
                               onClick={() => abrirEditar(aluno)}
                               aria-label={`Editar ${aluno.nome}`}
                               className="inline-flex h-7 w-7 items-center justify-center rounded-md border border-[#FFFFFF]/15 text-[#FFFFFF]/60 transition-colors hover:border-[#DD050A]/40 hover:bg-[#DD050A]/10 hover:text-[#FFFFFF]"
@@ -474,6 +484,12 @@ export function AlunosClient() {
           </SheetFooter>
         </SheetContent>
       </Sheet>
+
+      <PaymentLinkSheet
+        open={linkSheetAluno !== null}
+        onOpenChange={(open) => { if (!open) setLinkSheetAluno(null) }}
+        studentName={linkSheetAluno?.nome ?? ""}
+      />
     </SidebarProvider>
   )
 }

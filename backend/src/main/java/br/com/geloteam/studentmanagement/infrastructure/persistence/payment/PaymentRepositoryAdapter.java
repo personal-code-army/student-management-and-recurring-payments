@@ -24,6 +24,7 @@ public class PaymentRepositoryAdapter implements PaymentRepositoryPort {
     @Override public boolean existsById(Long id) { return jpa.existsById(id); }
     @Override public List<Payment> findAllBySubscriptionId(Long subscriptionId) { return jpa.findAllBySubscriptionId(subscriptionId).stream().map(this::toDomain).toList(); }
     @Override public List<Payment> findAllBySubscriptionStudentName(String name) { return jpa.findAllBySubscriptionStudentName(name).stream().map(this::toDomain).toList(); }
+    @Override public Optional<Payment> findByExternalReference(String externalReference) { return jpa.findByExternalReference(externalReference).map(this::toDomain); }
 
     private Payment toDomain(PaymentJpaEntity e) {
         Payment p = new Payment();
@@ -35,6 +36,12 @@ public class PaymentRepositoryAdapter implements PaymentRepositoryPort {
         p.setDueDate(e.getDueDate());
         p.setIssueDate(e.getIssueDate());
         p.setStatus(e.getStatus());
+        p.setMercadoPagoPreferenceId(e.getMercadoPagoPreferenceId());
+        p.setMercadoPagoPaymentId(e.getMercadoPagoPaymentId());
+        p.setCheckoutUrl(e.getCheckoutUrl());
+        p.setExternalReference(e.getExternalReference());
+        p.setPayerName(e.getPayerName());
+        p.setPayerEmail(e.getPayerEmail());
         return p;
     }
 
@@ -52,6 +59,12 @@ public class PaymentRepositoryAdapter implements PaymentRepositoryPort {
         e.setDueDate(p.getDueDate());
         e.setIssueDate(p.getIssueDate());
         e.setStatus(p.getStatus());
+        e.setMercadoPagoPreferenceId(p.getMercadoPagoPreferenceId());
+        e.setMercadoPagoPaymentId(p.getMercadoPagoPaymentId());
+        e.setCheckoutUrl(p.getCheckoutUrl());
+        e.setExternalReference(p.getExternalReference());
+        e.setPayerName(p.getPayerName());
+        e.setPayerEmail(p.getPayerEmail());
         return e;
     }
 }

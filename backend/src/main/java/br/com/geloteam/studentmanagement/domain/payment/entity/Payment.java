@@ -15,4 +15,10 @@ public class Payment {
     private LocalDate dueDate;
     private LocalDate issueDate;
     private String status;
+    private String mercadoPagoPreferenceId;
+    private String mercadoPagoPaymentId;
+    private String checkoutUrl;
+    private String externalReference;
+    private String payerName;
+    private String payerEmail;
 }

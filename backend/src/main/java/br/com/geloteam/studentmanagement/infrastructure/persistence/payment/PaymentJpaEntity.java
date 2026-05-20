@@ -33,4 +33,22 @@ public class PaymentJpaEntity {
     private LocalDate issueDate;
 
     private String status;
+
+    @Column(name = "mercado_pago_preference_id")
+    private String mercadoPagoPreferenceId;
+
+    @Column(name = "mercado_pago_payment_id")
+    private String mercadoPagoPaymentId;
+
+    @Column(name = "checkout_url", columnDefinition = "TEXT")
+    private String checkoutUrl;
+
+    @Column(name = "external_reference", unique = true)
+    private String externalReference;
+
+    @Column(name = "payer_name")
+    private String payerName;
+
+    @Column(name = "payer_email")
+    private String payerEmail;
 }
