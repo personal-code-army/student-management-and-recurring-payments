@@ -202,23 +202,42 @@ export function AlunosClient() {
   async function salvar() {
     if (!form.name.trim() || !form.cpf.trim() || !form.birthDate || !emailValido) return
     try {
+      const cpfDigits = normalizeCpf(form.cpf)
+      if (cpfDigits.length !== 11) {
+        setErro("CPF invalido.")
+        return
+      }
+
+      const planIdValue = form.planId.trim()
+      if (planIdValue && !/^\d+$/.test(planIdValue)) {
+        setErro("Plan ID invalido.")
+        return
+      }
+
+      const planId = planIdValue ? Number(planIdValue) : null
       const payload = {
         name: form.name.trim(),
-        cpf: normalizeCpf(form.cpf),
+        cpf: cpfDigits,
         birthDate: form.birthDate,
         phone: normalizePhone(form.phone) || null,
         email: form.email?.trim() || null,
         address: form.address?.trim() || null,
-        planId: form.planId ? Number(form.planId) : null,
+        planId,
         active: form.active,
       }
 
       if (modo === "criar") {
         const response = await api.post<ApiResponse<Aluno>>("/api/students", payload)
-        if (response.data?.data) setAlunos(prev => [...prev, response.data.data])
+        if (response.data?.data) {
+          setAlunos(prev => [...prev, response.data.data])
+          setErro(null)
+        }
       } else if (editando) {
         const response = await api.put<ApiResponse<Aluno>>(`/api/students/${editando.id}`, payload)
-        if (response.data?.data) setAlunos(prev => prev.map(a => a.id === editando.id ? response.data.data : a))
+        if (response.data?.data) {
+          setAlunos(prev => prev.map(a => a.id === editando.id ? response.data.data : a))
+          setErro(null)
+        }
       }
       setSheetAberto(false)
     } catch (err) {
@@ -231,6 +250,7 @@ export function AlunosClient() {
     try {
       await api.delete(`/api/students/${id}`)
       setAlunos(prev => prev.filter(a => a.id !== id))
+      setErro(null)
     } catch (err) {
       console.error("Erro ao excluir aluno", err)
       setErro("Nao foi possivel excluir o aluno.")
@@ -362,7 +382,7 @@ export function AlunosClient() {
                       </TableCell>
                     </TableRow>
                   ) : visiveis.map(aluno => {
-                    const telDigits = (aluno.phone || "").replace(/\D/g, "")
+                    const telDigits = normalizePhone(aluno.phone ?? "")
                     return (
                       <TableRow
                         key={aluno.id}
@@ -405,15 +425,25 @@ export function AlunosClient() {
                             </div>
                           ) : (
                             <div className="flex items-center justify-end gap-1.5">
-                              <a
-                                href={`https://wa.me/55${telDigits}`}
-                                target="_blank"
-                                rel="noreferrer"
-                                aria-label={`Contatar ${aluno.name} via WhatsApp (abre nova aba)`}
-                                className="inline-flex h-7 w-7 items-center justify-center rounded-md border border-[#FFFFFF]/15 text-[#FFFFFF]/60 transition-colors hover:border-[#DD050A]/40 hover:bg-[#DD050A]/10 hover:text-[#FFFFFF]"
-                              >
-                                <Phone className="h-3.5 w-3.5" />
-                              </a>
+                              {telDigits.length > 0 ? (
+                                <a
+                                  href={`https://wa.me/55${telDigits}`}
+                                  target="_blank"
+                                  rel="noreferrer"
+                                  aria-label={`Contatar ${aluno.name} via WhatsApp (abre nova aba)`}
+                                  className="inline-flex h-7 w-7 items-center justify-center rounded-md border border-[#FFFFFF]/15 text-[#FFFFFF]/60 transition-colors hover:border-[#DD050A]/40 hover:bg-[#DD050A]/10 hover:text-[#FFFFFF]"
+                                >
+                                  <Phone className="h-3.5 w-3.5" />
+                                </a>
+                              ) : (
+                                <span
+                                  aria-label={`Contato WhatsApp indisponivel para ${aluno.name}`}
+                                  aria-disabled="true"
+                                  className="inline-flex h-7 w-7 items-center justify-center rounded-md border border-[#FFFFFF]/10 text-[#FFFFFF]/30 cursor-not-allowed"
+                                >
+                                  <Phone className="h-3.5 w-3.5" />
+                                </span>
+                              )}
                               <button
                                 onClick={() => abrirEditar(aluno)}
                                 aria-label={`Editar ${aluno.name}`}
