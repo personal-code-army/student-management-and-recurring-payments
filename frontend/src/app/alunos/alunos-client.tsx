@@ -72,9 +72,15 @@ const STATUS_STYLE: Record<"Ativo" | "Inativo", string> = {
 const SELECT_CLASS = "h-8 rounded-md border border-[#FFFFFF]/15 bg-[#000000] px-2.5 text-xs text-[#FFFFFF] focus:border-[#DD050A]/50 focus:outline-none"
 const FORM_SELECT_CLASS = "h-9 w-full rounded-md border border-[#FFFFFF]/15 bg-[#000000] px-3 text-sm text-[#FFFFFF] focus:border-[#DD050A]/50 focus:outline-none"
 
+function normalizeIsoDate(value: string): string {
+  if (!value) return ""
+  return value.slice(0, 10)
+}
+
 function formatarData(iso: string): string {
-  if (!iso) return ""
-  const [ano, mes, dia] = iso.split("-")
+  const normalized = normalizeIsoDate(iso)
+  if (!normalized) return ""
+  const [ano, mes, dia] = normalized.split("-")
   return `${dia}/${mes}/${ano}`
 }
 
@@ -188,7 +194,7 @@ export function AlunosClient() {
     setForm({
       name: a.name,
       cpf: formatCpf(a.cpf),
-      birthDate: a.birthDate ?? "",
+      birthDate: normalizeIsoDate(a.birthDate ?? ""),
       phone: formatPhone(a.phone ?? ""),
       email: a.email ?? "",
       address: a.address ?? "",
