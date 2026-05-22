@@ -32,17 +32,38 @@ export function LoginForm({ className, onSwitchTab, ...props }: LoginFormProps) 
 
   const handleSubmit = async (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault()
+    const formData = new FormData(event.currentTarget)
+    const submittedEmail = String(formData.get("email") ?? "").trim()
+    const submittedPassword = String(formData.get("password") ?? "")
+
+    if (submittedEmail && submittedEmail !== email) {
+      setEmail(submittedEmail)
+    }
+    if (submittedPassword && submittedPassword !== password) {
+      setPassword(submittedPassword)
+    }
+
+    const payloadEmail = submittedEmail || email
+    const payloadPassword = submittedPassword || password
+
+    if (!payloadEmail || !payloadPassword) {
+      setStatus("error")
+      setMessage("Preencha o e-mail e a senha para continuar.")
+      return
+    }
+
     setStatus("loading")
     setMessage("")
 
     try {
       const response = await api.post("/api/auth/login", {
-        email,
-        password,
+        email: payloadEmail,
+        password: payloadPassword,
       })
 
-      if (response.data?.accessToken) {
-        localStorage.setItem("auth_token", response.data.accessToken)
+      const accessToken = response.data?.data?.accessToken
+      if (accessToken) {
+        localStorage.setItem("auth_token", accessToken)
       } else {
         setStatus("error")
         setMessage("Login realizado, mas o token nao foi retornado.")
@@ -78,8 +99,10 @@ export function LoginForm({ className, onSwitchTab, ...props }: LoginFormProps) 
                 <FieldLabel htmlFor="email" className="text-[#FFFFFF]">Email</FieldLabel>
                 <Input
                   id="email"
+                  name="email"
                   type="email"
                   placeholder="felipe@gmail.com"
+                  autoComplete="email"
                   required
                   value={email}
                   onChange={(event) => setEmail(event.target.value)}
@@ -97,9 +120,11 @@ export function LoginForm({ className, onSwitchTab, ...props }: LoginFormProps) 
                 </div>
                 <Input
                   id="password"
+                  name="password"
                   type="password"
                   required
                   placeholder="********"
+                  autoComplete="current-password"
                   value={password}
                   onChange={(event) => setPassword(event.target.value)}
                 />
