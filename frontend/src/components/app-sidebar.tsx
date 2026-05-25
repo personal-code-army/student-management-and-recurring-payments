@@ -91,7 +91,11 @@ export function AppSidebar() {
             </SidebarMenuItem>
           ))}
           <SidebarMenuItem>
-            <SidebarMenuButton className="w-full rounded-xl border border-[#DD050A]/25 bg-[#DD050A]/8 text-[#FFFFFF]/88 transition-all hover:border-[#DD050A]/55 hover:bg-[#DD050A]/14 hover:text-[#DD050A] cursor-pointer">
+            <SidebarMenuButton
+              type="button"
+              onClick={handleLogout}
+              className="w-full rounded-xl border border-[#DD050A]/25 bg-[#DD050A]/8 text-[#FFFFFF]/88 transition-all hover:border-[#DD050A]/55 hover:bg-[#DD050A]/14 hover:text-[#DD050A] cursor-pointer"
+            >
               <div className="flex items-center gap-3 px-3 py-2.5">
                 <LogOut className="h-4 w-4" />
                 <span className="text-sm">Sair</span>
