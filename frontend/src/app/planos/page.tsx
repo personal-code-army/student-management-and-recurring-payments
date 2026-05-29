@@ -2,7 +2,6 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Badge } from "@/components/ui/badge";
 import { SidebarProvider, SidebarTrigger } from "@/components/ui/sidebar";
 import { AppSidebar } from "@/components/app-sidebar";
-import { Separator } from "@/components/ui/separator";
 import { Check, CircleDollarSign } from "lucide-react";
 
 const planos = [
@@ -54,7 +53,11 @@ export default function PlanosPage() {
 			<div className="flex flex-col flex-1 min-h-screen bg-[#000000] text-[#FFFFFF]">
 				<header className="flex items-center gap-3 px-6 py-4 border-b border-[#FFFFFF]/10 bg-[#020203]/90 backdrop-blur sticky top-0 z-10">
 					<SidebarTrigger className="text-[#FFFFFF]/70 hover:text-[#FFFFFF]" />
-					<Separator orientation="vertical" className="h-5 bg-[#FFFFFF]/20" />
+					<div
+						aria-hidden
+						className="shrink-0 self-center"
+						style={{ width: "1px", height: "20px", backgroundColor: "rgba(255,255,255,0.45)" }}
+					/>
 					<div>
 						<h1 className="text-sm font-semibold text-[#FFFFFF] leading-none">Planos</h1>
 						<p className="text-xs text-[#FFFFFF]/60 mt-0.5">Gerencie os planos disponiveis</p>
