@@ -21,22 +21,14 @@ import { Separator } from "@/components/ui/separator"
 import {
   DollarSign, TrendingDown, CheckCircle, Plus, Pencil,
   Trash2, ChevronLeft, ChevronRight, Search, Filter,
-  AlertCircle, Clock, QrCode, FileText, CreditCard,
+  AlertCircle, Clock, Loader2,
 } from "lucide-react"
-import { api } from "@/lib/api"
+import {
+  paymentService, subscriptionService,
+  type Payment, type PaymentRequest, type Subscription,
+} from "./payment.service"
 
 // ─── Types ───────────────────────────────────────────────────────────────────
-
-interface Payment {
-  id: number
-  description: string
-  value: number
-  paymentMethod: string
-  dueDate: string
-  issueDate: string | null
-  status: string
-  subscriptionId: number
-}
 
 interface FormState {
   description: string
@@ -47,8 +39,6 @@ interface FormState {
   status: string
   subscriptionId: string
 }
-
-type ApiResponse<T> = { data: T }
 
 // ─── Constants ───────────────────────────────────────────────────────────────
 
@@ -82,14 +72,13 @@ const SELECT_CLASS =
   "h-8 rounded-md border border-[#FFFFFF]/15 bg-[#000000] px-2.5 text-xs text-[#FFFFFF] focus:border-[#DD050A]/50 focus:outline-none"
 
 const FORM_SELECT_CLASS =
-  "h-9 w-full rounded-md border border-[#FFFFFF]/15 bg-[#000000] px-3 text-sm text-[#FFFFFF] focus:border-[#DD050A]/50 focus:outline-none"
+  "h-9 w-full rounded-md border border-[#FFFFFF]/15 bg-[#000000] px-3 text-sm text-[#FFFFFF] focus:border-[#DD050A]/50 focus:outline-none disabled:opacity-50"
 
 // ─── Helpers ─────────────────────────────────────────────────────────────────
 
 function formatarData(iso: string | null): string {
   if (!iso) return "—"
-  const normalized = iso.slice(0, 10)
-  const [ano, mes, dia] = normalized.split("-")
+  const [ano, mes, dia] = iso.slice(0, 10).split("-")
   return `${dia}/${mes}/${ano}`
 }
 
@@ -107,29 +96,44 @@ function numerasDePagina(atual: number, total: number): (number | "…")[] {
   return pages
 }
 
+function formToRequest(form: FormState): PaymentRequest {
+  return {
+    description:    form.description.trim(),
+    value:          parseFloat(form.value.replace(",", ".")),
+    paymentMethod:  form.paymentMethod || null,
+    dueDate:        form.dueDate,
+    issueDate:      form.issueDate || null,
+    status:         form.status,
+    subscriptionId: form.subscriptionId ? Number(form.subscriptionId) : null,
+  }
+}
+
 // ─── Component ───────────────────────────────────────────────────────────────
 
 export function RecebimentosClient() {
-  const [payments, setPayments] = useState<Payment[]>([])
-  const [busca, setBusca] = useState("")
-  const [filtroStatus, setFiltroStatus] = useState<(typeof STATUS_OPTIONS)[number]>("Todos")
-  const [pagina, setPagina] = useState(1)
-  const [sheetAberto, setSheetAberto] = useState(false)
-  const [modo, setModo] = useState<"criar" | "editar">("criar")
-  const [editando, setEditando] = useState<Payment | null>(null)
-  const [deletandoId, setDeletandoId] = useState<number | null>(null)
-  const [form, setForm] = useState<FormState>(FORM_VAZIO)
-  const [carregando, setCarregando] = useState(true)
-  const [erro, setErro] = useState<string | null>(null)
+  const [payments, setPayments]             = useState<Payment[]>([])
+  const [subscriptions, setSubscriptions]   = useState<Subscription[]>([])
+  const [busca, setBusca]                   = useState("")
+  const [filtroStatus, setFiltroStatus]     = useState<(typeof STATUS_OPTIONS)[number]>("Todos")
+  const [pagina, setPagina]                 = useState(1)
+  const [sheetAberto, setSheetAberto]       = useState(false)
+  const [modo, setModo]                     = useState<"criar" | "editar">("criar")
+  const [editando, setEditando]             = useState<Payment | null>(null)
+  const [deletandoId, setDeletandoId]       = useState<number | null>(null)
+  const [form, setForm]                     = useState<FormState>(FORM_VAZIO)
+  const [carregando, setCarregando]         = useState(true)
+  const [carregandoSubs, setCarregandoSubs] = useState(false)
+  const [salvando, setSalvando]             = useState(false)
+  const [erro, setErro]                     = useState<string | null>(null)
 
-  // ── Fetch ──────────────────────────────────────────────────────────────────
+  // ── Fetch payments ─────────────────────────────────────────────────────────
 
   const carregarPayments = useCallback(async () => {
     try {
       setErro(null)
       setCarregando(true)
-      const response = await api.get<ApiResponse<Payment[]>>("/api/payments")
-      setPayments(Array.isArray(response.data?.data) ? response.data.data : [])
+      const data = await paymentService.findAll()
+      setPayments(data)
     } catch (err) {
       console.error("Erro ao carregar recebimentos", err)
       setErro("Não foi possível carregar os recebimentos.")
@@ -138,11 +142,26 @@ export function RecebimentosClient() {
     }
   }, [])
 
-  useEffect(() => {
-    void carregarPayments()
-  }, [carregarPayments])
+  useEffect(() => { void carregarPayments() }, [carregarPayments])
 
-  // ── Derived ────────────────────────────────────────────────────────────────
+  // ── Fetch subscriptions ao abrir sheet de criação ──────────────────────────
+
+  const carregarSubscriptions = useCallback(async () => {
+    // Só busca se ainda não carregou
+    if (subscriptions.length > 0) return
+    try {
+      setCarregandoSubs(true)
+      const data = await subscriptionService.findAllActive()
+      setSubscriptions(data)
+    } catch (err) {
+      console.error("Erro ao carregar assinaturas", err)
+      // Não bloqueia o form, apenas o select ficará vazio
+    } finally {
+      setCarregandoSubs(false)
+    }
+  }, [subscriptions.length])
+
+  // ── Derived state ──────────────────────────────────────────────────────────
 
   const filtrados = useMemo(
     () =>
@@ -153,25 +172,19 @@ export function RecebimentosClient() {
           return (
             p.description.toLowerCase().includes(termo) ||
             String(p.id).includes(termo) ||
-            p.paymentMethod?.toLowerCase().includes(termo)
+            (p.paymentMethod ?? "").toLowerCase().includes(termo)
           )
         })
-        .filter(p => (filtroStatus === "Todos" ? true : p.status === filtroStatus)),
+        .filter(p => filtroStatus === "Todos" ? true : p.status === filtroStatus),
     [payments, busca, filtroStatus]
   )
 
   const totalPaginas = Math.max(1, Math.ceil(filtrados.length / POR_PAGINA))
-  const paginaAtual = Math.min(pagina, totalPaginas)
-  const visiveis = filtrados.slice((paginaAtual - 1) * POR_PAGINA, paginaAtual * POR_PAGINA)
+  const paginaAtual  = Math.min(pagina, totalPaginas)
+  const visiveis     = filtrados.slice((paginaAtual - 1) * POR_PAGINA, paginaAtual * POR_PAGINA)
 
-  const totalAReceber = payments
-    .filter(p => p.status === "A receber")
-    .reduce((acc, p) => acc + p.value, 0)
-
-  const totalAtrasados = payments
-    .filter(p => p.status === "Vencido")
-    .reduce((acc, p) => acc + p.value, 0)
-
+  const totalAReceber    = payments.filter(p => p.status === "A receber").reduce((a, p) => a + p.value, 0)
+  const totalAtrasados   = payments.filter(p => p.status === "Vencido").reduce((a, p) => a + p.value, 0)
   const totalRecebidoMes = useMemo(() => {
     const now = new Date()
     return payments
@@ -180,13 +193,10 @@ export function RecebimentosClient() {
         const d = new Date(p.issueDate)
         return d.getMonth() === now.getMonth() && d.getFullYear() === now.getFullYear()
       })
-      .reduce((acc, p) => acc + p.value, 0)
+      .reduce((a, p) => a + p.value, 0)
   }, [payments])
 
-  function mudarFiltro(fn: () => void) {
-    fn()
-    setPagina(1)
-  }
+  function mudarFiltro(fn: () => void) { fn(); setPagina(1) }
 
   // ── Sheet actions ──────────────────────────────────────────────────────────
 
@@ -194,60 +204,62 @@ export function RecebimentosClient() {
     setModo("criar")
     setForm(FORM_VAZIO)
     setEditando(null)
+    setErro(null)
     setSheetAberto(true)
+    void carregarSubscriptions()
   }
 
   function abrirEditar(p: Payment) {
     setModo("editar")
     setForm({
-      description: p.description,
-      value: String(p.value),
-      paymentMethod: p.paymentMethod ?? "",
-      dueDate: p.dueDate?.slice(0, 10) ?? "",
-      issueDate: p.issueDate?.slice(0, 10) ?? "",
-      status: p.status,
-      subscriptionId: String(p.subscriptionId),
+      description:    p.description,
+      value:          String(p.value),
+      paymentMethod:  p.paymentMethod ?? "",
+      dueDate:        p.dueDate?.slice(0, 10) ?? "",
+      issueDate:      p.issueDate?.slice(0, 10) ?? "",
+      status:         p.status,
+      subscriptionId: p.subscriptionId != null ? String(p.subscriptionId) : "",
     })
     setEditando(p)
+    setErro(null)
     setSheetAberto(true)
+    // Editar não precisa re-selecionar assinatura — campo fica readonly
   }
 
   async function salvar() {
     if (!form.description.trim() || !form.value || !form.dueDate) return
+    // Criação exige assinatura válida para não violar FK
+    if (modo === "criar" && !form.subscriptionId) {
+      setErro("Selecione uma assinatura ativa para vincular o recebimento.")
+      return
+    }
     try {
-      const payload = {
-        description: form.description.trim(),
-        value: parseFloat(form.value.replace(",", ".")),
-        paymentMethod: form.paymentMethod || null,
-        dueDate: form.dueDate,
-        issueDate: form.issueDate || null,
-        status: form.status,
-        subscriptionId: form.subscriptionId ? Number(form.subscriptionId) : null,
-      }
+      setSalvando(true)
+      setErro(null)
+      const request = formToRequest(form)
 
       if (modo === "criar") {
-        const response = await api.post<ApiResponse<Payment>>("/api/payments", payload)
-        if (response.data?.data) {
-          setPayments(prev => [...prev, response.data.data])
-          setErro(null)
-        }
+        const created = await paymentService.create(request)
+        setPayments(prev => [created, ...prev])
       } else if (editando) {
-        const response = await api.put<ApiResponse<Payment>>(`/api/payments/${editando.id}`, payload)
-        if (response.data?.data) {
-          setPayments(prev => prev.map(p => (p.id === editando.id ? response.data.data : p)))
-          setErro(null)
-        }
+        const updated = await paymentService.update(editando.id, request)
+        setPayments(prev => prev.map(p => p.id === editando.id ? updated : p))
       }
+
       setSheetAberto(false)
-    } catch (err) {
+    } catch (err: unknown) {
       console.error("Erro ao salvar recebimento", err)
-      setErro("Não foi possível salvar o recebimento.")
+      const msg = (err as { response?: { data?: { message?: string } } })
+        ?.response?.data?.message
+      setErro(msg ?? "Não foi possível salvar o recebimento.")
+    } finally {
+      setSalvando(false)
     }
   }
 
   async function excluir(id: number) {
     try {
-      await api.delete(`/api/payments/${id}`)
+      await paymentService.remove(id)
       setPayments(prev => prev.filter(p => p.id !== id))
       setErro(null)
     } catch (err) {
@@ -263,6 +275,13 @@ export function RecebimentosClient() {
   const labelClass = "text-xs font-medium text-[#FFFFFF]/80"
   const inputClass =
     "border-[#FFFFFF]/15 bg-[#000000] text-[#FFFFFF] placeholder:text-[#FFFFFF]/30 focus-visible:border-[#DD050A]/50"
+
+  const canSave =
+    form.description.trim() !== "" &&
+    form.value !== "" &&
+    form.dueDate !== "" &&
+    (modo === "editar" || form.subscriptionId !== "") &&
+    !salvando
 
   // ── Render ─────────────────────────────────────────────────────────────────
 
@@ -294,7 +313,7 @@ export function RecebimentosClient() {
 
           {/* ── KPI Cards ── */}
           <div className="grid grid-cols-1 gap-4 sm:grid-cols-3">
-            {[
+            {([
               {
                 label: "Total a Receber",
                 valor: formatarMoeda(totalAReceber),
@@ -310,7 +329,7 @@ export function RecebimentosClient() {
                 sub: `${payments.filter(p => p.status === "Vencido").length} cobranças vencidas`,
                 subClass: "text-[#DD050A]",
                 icon: TrendingDown,
-                accentColor: "group-hover:text-[#DD050A] text-[#DD050A]",
+                accentColor: "text-[#DD050A]",
                 accentBg: "bg-[#DD050A]/12",
                 valorClass: "text-[#DD050A]",
               },
@@ -320,15 +339,12 @@ export function RecebimentosClient() {
                 sub: `${payments.filter(p => p.status === "Pago").length} pagamentos confirmados`,
                 subClass: "text-[#00FF00]/80",
                 icon: CheckCircle,
-                accentColor: "group-hover:text-[#00AA00] text-[#00AA00]",
+                accentColor: "text-[#00AA00] group-hover:text-[#00CC44]",
                 accentBg: "group-hover:bg-[#00FF00]/12",
                 valorClass: "text-[#00CC44]",
               },
-            ].map(({ label, valor, sub, subClass, icon: Icon, accentColor, accentBg, valorClass }) => (
-              <Card
-                key={label}
-                className="group border-[#FFFFFF]/12 bg-[#020203] transition-colors hover:border-[#DD050A]/50"
-              >
+            ] as const).map(({ label, valor, sub, subClass, icon: Icon, accentColor, accentBg, valorClass }) => (
+              <Card key={label} className="group border-[#FFFFFF]/12 bg-[#020203] transition-colors hover:border-[#DD050A]/50">
                 <CardHeader className="flex flex-row items-center justify-between px-4 pb-2 pt-4 sm:px-5">
                   <CardTitle className="text-xs font-medium uppercase tracking-wider text-[#FFFFFF]/65">
                     {label}
@@ -338,7 +354,7 @@ export function RecebimentosClient() {
                   </span>
                 </CardHeader>
                 <CardContent className="px-4 pb-4 sm:px-5">
-                  <p className={`text-xl font-bold sm:text-2xl ${valorClass ?? "text-[#FFFFFF]"}`}>
+                  <p className={`text-xl font-bold sm:text-2xl ${(valorClass as string | undefined) ?? "text-[#FFFFFF]"}`}>
                     {valor}
                   </p>
                   <p className={`mt-1 text-xs ${subClass}`}>{sub}</p>
@@ -357,14 +373,12 @@ export function RecebimentosClient() {
                     {filtrados.length} recebimento{filtrados.length !== 1 ? "s" : ""} encontrado{filtrados.length !== 1 ? "s" : ""}
                   </CardDescription>
                 </div>
-
-                {/* Filtros */}
                 <div className="flex flex-wrap items-center gap-2">
                   <div className="relative">
                     <Search className="absolute left-2.5 top-1/2 h-3.5 w-3.5 -translate-y-1/2 text-[#FFFFFF]/40" />
                     <Input
                       type="search"
-                      placeholder="Buscar por cliente ou ID..."
+                      placeholder="Buscar por descrição ou ID..."
                       value={busca}
                       onChange={e => mudarFiltro(() => setBusca(e.target.value))}
                       className="h-8 w-full border-[#FFFFFF]/15 bg-[#000000] pl-8 text-xs text-[#FFFFFF] placeholder:text-[#FFFFFF]/35 focus-visible:border-[#DD050A]/50 sm:w-52"
@@ -378,9 +392,7 @@ export function RecebimentosClient() {
                       aria-label="Filtrar por status"
                       className={SELECT_CLASS}
                     >
-                      {STATUS_OPTIONS.map(s => (
-                        <option key={s} value={s}>{s}</option>
-                      ))}
+                      {STATUS_OPTIONS.map(s => <option key={s} value={s}>{s}</option>)}
                     </select>
                   </div>
                 </div>
@@ -388,7 +400,7 @@ export function RecebimentosClient() {
             </CardHeader>
 
             <CardContent className="px-4 pb-5 sm:px-5">
-              {erro && (
+              {erro && !sheetAberto && (
                 <div className="mb-4 rounded-md border border-[#DD050A]/40 bg-[#DD050A]/10 px-3 py-2 text-xs text-[#DD050A]">
                   {erro}
                 </div>
@@ -396,7 +408,7 @@ export function RecebimentosClient() {
 
               <Table className="min-w-[640px] table-fixed sm:min-w-0">
                 <TableCaption className="sr-only">
-                  Lista de recebimentos com informações de valor, cliente, datas e status
+                  Lista de recebimentos com informações de valor, descrição, datas e status
                 </TableCaption>
                 <TableHeader>
                   <TableRow className="border-[#FFFFFF]/10 hover:bg-transparent">
@@ -405,7 +417,7 @@ export function RecebimentosClient() {
                     <TableHead scope="col" className="text-xs uppercase text-[#FFFFFF]/60">Descrição</TableHead>
                     <TableHead scope="col" className="hidden text-xs uppercase text-[#FFFFFF]/60 sm:table-cell">Emissão</TableHead>
                     <TableHead scope="col" className="hidden text-xs uppercase text-[#FFFFFF]/60 md:table-cell">Vencimento</TableHead>
-                    <TableHead scope="col" className="hidden text-xs uppercase text-[#FFFFFF]/60 lg:table-cell">Cobrança</TableHead>
+                    <TableHead scope="col" className="hidden text-xs uppercase text-[#FFFFFF]/60 lg:table-cell">Método</TableHead>
                     <TableHead scope="col" className="text-xs uppercase text-[#FFFFFF]/60">Status</TableHead>
                     <TableHead scope="col" className="text-right text-xs uppercase text-[#FFFFFF]/60">Ações</TableHead>
                   </TableRow>
@@ -430,56 +442,34 @@ export function RecebimentosClient() {
                     </TableRow>
                   ) : (
                     visiveis.map(payment => (
-                      <TableRow
-                        key={payment.id}
-                        className="border-[#FFFFFF]/8 transition-colors hover:bg-[#FFFFFF]/3"
-                      >
-                        {/* ID */}
-                        <TableCell className="font-mono text-xs text-[#FFFFFF]/50">
-                          #{payment.id}
-                        </TableCell>
-
-                        {/* Valor */}
-                        <TableCell className="font-semibold text-[#FFFFFF]">
-                          {formatarMoeda(payment.value)}
-                        </TableCell>
-
-                        {/* Descrição */}
+                      <TableRow key={payment.id} className="border-[#FFFFFF]/8 transition-colors hover:bg-[#FFFFFF]/3">
+                        <TableCell className="font-mono text-xs text-[#FFFFFF]/50">#{payment.id}</TableCell>
+                        <TableCell className="font-semibold text-[#FFFFFF]">{formatarMoeda(payment.value)}</TableCell>
                         <TableCell>
                           <span className="block max-w-[180px] truncate text-sm text-[#FFFFFF]/85" title={payment.description}>
                             {payment.description}
                           </span>
                         </TableCell>
-
-                        {/* Emissão */}
                         <TableCell className="hidden text-xs text-[#FFFFFF]/65 sm:table-cell">
                           {formatarData(payment.issueDate)}
                         </TableCell>
-
-                        {/* Vencimento */}
                         <TableCell className="hidden text-xs text-[#FFFFFF]/65 md:table-cell">
                           {formatarData(payment.dueDate)}
                         </TableCell>
-
-                        {/* Cobrança / Método */}
                         <TableCell className="hidden lg:table-cell">
-                          <span className="text-xs text-[#FFFFFF]/55">
-                            {payment.paymentMethod ?? "—"}
-                          </span>
+                          <span className="text-xs text-[#FFFFFF]/55">{payment.paymentMethod ?? "—"}</span>
                         </TableCell>
-
-                        {/* Status */}
                         <TableCell>
                           <Badge
                             variant="outline"
-                            className={`flex w-fit items-center gap-1 text-[10px] font-medium ${STATUS_STYLE[payment.status] ?? "border-[#FFFFFF]/20 bg-[#FFFFFF]/8 text-[#FFFFFF]/50"}`}
+                            className={`flex w-fit items-center gap-1 text-[10px] font-medium ${
+                              STATUS_STYLE[payment.status] ?? "border-[#FFFFFF]/20 bg-[#FFFFFF]/8 text-[#FFFFFF]/50"
+                            }`}
                           >
                             {STATUS_ICON[payment.status]}
                             {payment.status}
                           </Badge>
                         </TableCell>
-
-                        {/* Ações */}
                         <TableCell className="text-right">
                           <div className="flex items-center justify-end gap-1">
                             <button
@@ -525,8 +515,7 @@ export function RecebimentosClient() {
               {totalPaginas > 1 && (
                 <div className="mt-4 flex items-center justify-between">
                   <p className="text-xs text-[#FFFFFF]/50">
-                    Mostrando {(paginaAtual - 1) * POR_PAGINA + 1}–
-                    {Math.min(paginaAtual * POR_PAGINA, filtrados.length)} de {filtrados.length}
+                    Mostrando {(paginaAtual - 1) * POR_PAGINA + 1}–{Math.min(paginaAtual * POR_PAGINA, filtrados.length)} de {filtrados.length}
                   </p>
                   <div className="flex items-center gap-1">
                     <button
@@ -571,7 +560,7 @@ export function RecebimentosClient() {
       </div>
 
       {/* ── Sheet: Criar / Editar ── */}
-      <Sheet open={sheetAberto} onOpenChange={setSheetAberto}>
+      <Sheet open={sheetAberto} onOpenChange={open => { setSheetAberto(open); if (!open) setErro(null) }}>
         <SheetContent
           side="right"
           className="flex w-full flex-col gap-0 border-l border-[#FFFFFF]/10 bg-[#020203] p-0 text-[#FFFFFF] sm:max-w-md"
@@ -588,13 +577,62 @@ export function RecebimentosClient() {
           </SheetHeader>
 
           <div className="flex-1 overflow-y-auto px-6 py-5">
-            {erro && (
+            {erro && sheetAberto && (
               <div className="mb-4 rounded-md border border-[#DD050A]/40 bg-[#DD050A]/10 px-3 py-2 text-xs text-[#DD050A]">
                 {erro}
               </div>
             )}
 
             <div className="space-y-4">
+
+              {/* ── Assinatura (select real) — só aparece na criação ── */}
+              {modo === "criar" && (
+                <div className="flex flex-col gap-1.5">
+                  <Label htmlFor="assinatura" className={labelClass}>
+                    Assinatura *
+                    {carregandoSubs && (
+                      <Loader2 className="ml-1.5 inline h-3 w-3 animate-spin text-[#FFFFFF]/40" />
+                    )}
+                  </Label>
+                  <select
+                    id="assinatura"
+                    value={form.subscriptionId}
+                    onChange={e => setForm(f => ({ ...f, subscriptionId: e.target.value }))}
+                    disabled={carregandoSubs}
+                    className={FORM_SELECT_CLASS}
+                  >
+                    <option value="">
+                      {carregandoSubs
+                        ? "Carregando assinaturas..."
+                        : subscriptions.length === 0
+                          ? "Nenhuma assinatura ativa encontrada"
+                          : "Selecionar assinatura..."}
+                    </option>
+                    {subscriptions.map(s => (
+                      <option key={s.id} value={String(s.id)}>
+                        #{s.id} — Aluno {s.studentId} · Plano {s.planId}
+                      </option>
+                    ))}
+                  </select>
+                  {subscriptions.length === 0 && !carregandoSubs && (
+                    <p className="text-[10px] text-[#FFFFFF]/40">
+                      Crie uma assinatura ativa antes de registrar um pagamento manualmente.
+                    </p>
+                  )}
+                </div>
+              )}
+
+              {/* ── Na edição mostramos o ID como readonly ── */}
+              {modo === "editar" && (
+                <div className="flex flex-col gap-1.5">
+                  <Label className={labelClass}>Assinatura</Label>
+                  <div className="flex h-9 items-center rounded-md border border-[#FFFFFF]/10 bg-[#FFFFFF]/5 px-3 text-sm text-[#FFFFFF]/50">
+                    #{form.subscriptionId}
+                    <span className="ml-2 text-xs text-[#FFFFFF]/35">(não pode ser alterada)</span>
+                  </div>
+                </div>
+              )}
+
               {/* Descrição */}
               <div className="flex flex-col gap-1.5">
                 <Label htmlFor="descricao" className={labelClass}>Descrição *</Label>
@@ -629,9 +667,7 @@ export function RecebimentosClient() {
                     className={FORM_SELECT_CLASS}
                   >
                     <option value="">Selecionar...</option>
-                    {METHOD_OPTIONS.map(m => (
-                      <option key={m} value={m}>{m}</option>
-                    ))}
+                    {METHOD_OPTIONS.map(m => <option key={m} value={m}>{m}</option>)}
                   </select>
                 </div>
               </div>
@@ -660,33 +696,21 @@ export function RecebimentosClient() {
                 </div>
               </div>
 
-              {/* Status + Assinatura */}
-              <div className="grid grid-cols-2 gap-4">
-                <div className="flex flex-col gap-1.5">
-                  <Label htmlFor="status" className={labelClass}>Status</Label>
-                  <select
-                    id="status"
-                    value={form.status}
-                    onChange={e => setForm(f => ({ ...f, status: e.target.value }))}
-                    className={FORM_SELECT_CLASS}
-                  >
-                    <option value="A receber">A receber</option>
-                    <option value="Pago">Pago</option>
-                    <option value="Vencido">Vencido</option>
-                  </select>
-                </div>
-                <div className="flex flex-col gap-1.5">
-                  <Label htmlFor="assinatura" className={labelClass}>ID da Assinatura</Label>
-                  <Input
-                    id="assinatura"
-                    inputMode="numeric"
-                    value={form.subscriptionId}
-                    onChange={e => setForm(f => ({ ...f, subscriptionId: e.target.value }))}
-                    placeholder="Ex: 1"
-                    className={inputClass}
-                  />
-                </div>
+              {/* Status */}
+              <div className="flex flex-col gap-1.5">
+                <Label htmlFor="status" className={labelClass}>Status</Label>
+                <select
+                  id="status"
+                  value={form.status}
+                  onChange={e => setForm(f => ({ ...f, status: e.target.value }))}
+                  className={FORM_SELECT_CLASS}
+                >
+                  <option value="A receber">A receber</option>
+                  <option value="Pago">Pago</option>
+                  <option value="Vencido">Vencido</option>
+                </select>
               </div>
+
             </div>
           </div>
 
@@ -698,10 +722,11 @@ export function RecebimentosClient() {
             </SheetClose>
             <button
               onClick={salvar}
-              disabled={!form.description.trim() || !form.value || !form.dueDate}
-              className="flex-1 rounded-lg bg-[#DD050A] py-2 text-sm font-medium text-[#FFFFFF] transition-colors hover:bg-[#DD050A]/85 disabled:opacity-50"
+              disabled={!canSave}
+              className="flex flex-1 items-center justify-center gap-2 rounded-lg bg-[#DD050A] py-2 text-sm font-medium text-[#FFFFFF] transition-colors hover:bg-[#DD050A]/85 disabled:opacity-50"
             >
-              {modo === "criar" ? "Registrar" : "Salvar"}
+              {salvando && <Loader2 className="h-3.5 w-3.5 animate-spin" />}
+              {salvando ? "Salvando..." : modo === "criar" ? "Registrar" : "Salvar"}
             </button>
           </SheetFooter>
         </SheetContent>
