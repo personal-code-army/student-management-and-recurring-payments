@@ -97,8 +97,24 @@ function numerasDePagina(atual: number, total: number): (number | "…")[] {
 }
 
 function parseCurrency(raw: string): number {
-  // Remove thousand separators (dots in pt-BR) then replace decimal comma
-  return parseFloat(raw.replace(/\./g, "").replace(",", "."))
+  const str = raw.trim()
+  if (str.includes(",") && str.includes(".")) {
+    // pt-BR thousands+decimal: "1.234,56" → dot=thousands, comma=decimal
+    return parseFloat(str.replace(/\./g, "").replace(",", "."))
+  }
+  if (str.includes(",")) {
+    // comma-only: "1234,56" → comma=decimal
+    return parseFloat(str.replace(",", "."))
+  }
+  if (str.includes(".")) {
+    // dot-only: check digits after last dot to decide role
+    // ≤2 digits → decimal ("1234.56"); >2 digits → thousands ("1.234")
+    const afterDot = str.split(".").pop() ?? ""
+    return afterDot.length <= 2
+      ? parseFloat(str)
+      : parseFloat(str.replace(/\./g, ""))
+  }
+  return parseFloat(str)
 }
 
 function formToRequest(form: FormState): PaymentRequest {
