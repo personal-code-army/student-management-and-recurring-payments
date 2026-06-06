@@ -1,8 +1,8 @@
 import { useState, type ComponentProps, type FormEvent } from "react"
 import { useRouter } from "next/navigation"
-import axios from "axios"
 import { cn } from "@/lib/utils"
 import { api } from "@/lib/api"
+import { getApiErrorInfo, resolveApiErrorContent } from "@/lib/api-errors"
 import { Button } from "@/components/ui/button"
 import {
   Card,
@@ -74,12 +74,10 @@ export function LoginForm({ className, onSwitchTab, ...props }: LoginFormProps) 
       setMessage("Login realizado com sucesso.")
       router.replace("/dashboard")
     } catch (error) {
-      const errorMessage = axios.isAxiosError(error)
-        ? error.response?.data?.message
-        : null
-
+      const info = getApiErrorInfo(error)
+      const { description, detail } = resolveApiErrorContent(info)
       setStatus("error")
-      setMessage(errorMessage ?? "Falha na conexao com o servidor.")
+      setMessage(detail ?? description)
     }
   }
 
