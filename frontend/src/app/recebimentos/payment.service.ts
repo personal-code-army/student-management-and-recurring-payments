@@ -66,13 +66,17 @@ export const paymentService = {
   /** GET /api/payments/{id} */
   async findById(id: number): Promise<Payment> {
     const res = await api.get<ApiResponse<Payment>>(`/api/payments/${id}`)
-    return res.data.data
+    const payment = res.data?.data
+    if (!payment) throw new Error(`Payment ${id} not found`)
+    return payment
   },
 
   /** POST /api/payments */
   async create(request: PaymentRequest): Promise<Payment> {
     const res = await api.post<ApiResponse<Payment>>("/api/payments", request)
-    return res.data.data
+    const payment = res.data?.data
+    if (!payment) throw new Error("Failed to create payment")
+    return payment
   },
 
   /**
@@ -82,7 +86,9 @@ export const paymentService = {
    */
   async update(id: number, request: PaymentRequest): Promise<Payment> {
     const res = await api.put<ApiResponse<Payment>>(`/api/payments/${id}`, request)
-    return res.data.data
+    const payment = res.data?.data
+    if (!payment) throw new Error("Failed to update payment")
+    return payment
   },
 
   /** DELETE /api/payments/{id} */

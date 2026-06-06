@@ -96,10 +96,15 @@ function numerasDePagina(atual: number, total: number): (number | "…")[] {
   return pages
 }
 
+function parseCurrency(raw: string): number {
+  // Remove thousand separators (dots in pt-BR) then replace decimal comma
+  return parseFloat(raw.replace(/\./g, "").replace(",", "."))
+}
+
 function formToRequest(form: FormState): PaymentRequest {
   return {
     description:    form.description.trim(),
-    value:          parseFloat(form.value.replace(",", ".")),
+    value:          parseCurrency(form.value),
     paymentMethod:  form.paymentMethod || null,
     dueDate:        form.dueDate,
     issueDate:      form.issueDate || null,
@@ -187,12 +192,9 @@ export function RecebimentosClient() {
   const totalAtrasados   = payments.filter(p => p.status === "Vencido").reduce((a, p) => a + p.value, 0)
   const totalRecebidoMes = useMemo(() => {
     const now = new Date()
+    const currentYYYYMM = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, "0")}`
     return payments
-      .filter(p => {
-        if (p.status !== "Pago" || !p.issueDate) return false
-        const d = new Date(p.issueDate)
-        return d.getMonth() === now.getMonth() && d.getFullYear() === now.getFullYear()
-      })
+      .filter(p => p.status === "Pago" && p.issueDate?.slice(0, 7) === currentYYYYMM)
       .reduce((a, p) => a + p.value, 0)
   }, [payments])
 
@@ -237,6 +239,12 @@ export function RecebimentosClient() {
       setSalvando(true)
       setErro(null)
       const request = formToRequest(form)
+
+      if (isNaN(request.value)) {
+        setErro("Valor inválido. Use o formato numérico correto (ex: 150,00).")
+        setSalvando(false)
+        return
+      }
 
       if (modo === "criar") {
         const created = await paymentService.create(request)
