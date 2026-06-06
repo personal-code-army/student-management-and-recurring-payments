@@ -1,7 +1,7 @@
 import { useState, type ComponentProps, type FormEvent } from "react"
-import axios from "axios"
 import { Button } from "@/components/ui/button"
 import { api } from "@/lib/api"
+import { getApiErrorInfo, resolveApiErrorContent } from "@/lib/api-errors"
 import {
   Card,
   CardContent,
@@ -80,12 +80,10 @@ export function SignupForm({ onSwitchTab, ...props }: SignupFormProps) {
       setStatus("success")
       setMessage("Conta criada com sucesso. Voce pode entrar agora.")
     } catch (error) {
-      const errorMessage = axios.isAxiosError(error)
-        ? error.response?.data?.message
-        : null
-
+      const info = getApiErrorInfo(error)
+      const { description, detail } = resolveApiErrorContent(info)
       setStatus("error")
-      setMessage(errorMessage ?? "Falha na conexao com o servidor.")
+      setMessage(detail ?? description)
     }
   }
 
