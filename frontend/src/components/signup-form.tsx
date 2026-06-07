@@ -1,7 +1,7 @@
 import { useState, type ComponentProps, type FormEvent } from "react"
-import axios from "axios"
 import { Button } from "@/components/ui/button"
 import { api } from "@/lib/api"
+import { getApiErrorInfo, resolveApiErrorContent } from "@/lib/api-errors"
 import {
   Card,
   CardContent,
@@ -25,37 +25,65 @@ export function SignupForm({ onSwitchTab, ...props }: SignupFormProps) {
   const [name, setName] = useState("")
   const [email, setEmail] = useState("")
   const [password, setPassword] = useState("")
+  const [confirmPassword, setConfirmPassword] = useState("")
   const [cellphoneNumber, setCellphoneNumber] = useState("")
-  const [companyId] = useState("2")
-  const [role] = useState("user")
+  const [companyId] = useState(2)
   const [status, setStatus] = useState<"idle" | "loading" | "success" | "error">("idle")
   const [message, setMessage] = useState("")
 
   const handleSubmit = async (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault()
-    setMessage("")
+    const formData = new FormData(event.currentTarget)
+    const submittedPassword = String(formData.get("password") ?? "")
+    const submittedConfirmPassword = String(formData.get("confirmPassword") ?? "")
 
+    if (submittedPassword && submittedPassword !== password) {
+      setPassword(submittedPassword)
+    }
+    if (submittedConfirmPassword && submittedConfirmPassword !== confirmPassword) {
+      setConfirmPassword(submittedConfirmPassword)
+    }
+
+    const payloadPassword = submittedPassword || password
+    const payloadConfirmPassword = submittedConfirmPassword || confirmPassword
+
+    if (!payloadPassword) {
+      setStatus("error")
+      setMessage("Informe uma senha para continuar.")
+      return
+    }
+
+    if (payloadPassword.length < 8) {
+      setStatus("error")
+      setMessage("A senha deve ter pelo menos 8 caracteres.")
+      return
+    }
+
+    if (payloadPassword !== payloadConfirmPassword) {
+      setStatus("error")
+      setMessage("As senhas nao conferem.")
+      return
+    }
+
+    setMessage("")
     setStatus("loading")
 
     try {
       await api.post("/api/auth/register", {
         name,
         email,
-        password,
+        password: payloadPassword,
         cellphoneNumber,
         companyId,
-        role,
       })
 
       setStatus("success")
       setMessage("Conta criada com sucesso. Voce pode entrar agora.")
     } catch (error) {
-      const errorMessage = axios.isAxiosError(error)
-        ? error.response?.data?.message
-        : null
-
+      const info = getApiErrorInfo(error)
+      const { description, detail } = resolveApiErrorContent(info)
       setStatus("error")
-      setMessage(errorMessage ?? "Falha na conexao com o servidor.")
+      setMessage(detail ?? description)
     }
   }
 
@@ -75,34 +103,42 @@ export function SignupForm({ onSwitchTab, ...props }: SignupFormProps) {
           <FieldGroup>
             <Field>
               <FieldLabel htmlFor="name">Nome Completo</FieldLabel>
-              <Input
-                id="name"
-                type="text"
-                placeholder="Felipe Figueiredo Mascarenhas"
-                required
-                value={name}
-                onChange={(event) => setName(event.target.value)}
-              />
+                <Input
+                  id="name"
+                  name="name"
+                  type="text"
+                  placeholder="Nome Completo"
+                  autoComplete="name"
+                  required
+                  value={name}
+                  onChange={(event) => setName(event.target.value)}
+                />
             </Field>
             <Field>
               <FieldLabel htmlFor="email" className="text-[#FFFFFF]">Email</FieldLabel>
-              <Input
-                id="email"
-                type="email"
-                placeholder="felipe@gmail.com"
-                required
-                value={email}
-                onChange={(event) => setEmail(event.target.value)}
-              />
+                <Input
+                  id="email"
+                  name="email"
+                  type="email"
+                  placeholder="nome@email.com"
+                  autoComplete="email"
+                  required
+                  value={email}
+                  onChange={(event) => setEmail(event.target.value)}
+                />
             </Field>
             <Field>
               <FieldLabel htmlFor="password" className="text-[#FFFFFF]">Senha</FieldLabel>
-              <Input
-                id="password"
-                type="password"
-                className="border-[#FFFFFF]/20 bg-[#000000] text-[#FFFFFF] placeholder:text-[#FFFFFF]/40 focus-visible:border-[#DD050A]"
-                required
-              />
+                <Input
+                  id="password"
+                  name="password"
+                  type="password"
+                  className="border-[#FFFFFF]/20 bg-[#000000] text-[#FFFFFF] placeholder:text-[#FFFFFF]/40 focus-visible:border-[#DD050A]"
+                  autoComplete="new-password"
+                  required
+                  value={password}
+                  onChange={(event) => setPassword(event.target.value)}
+                />
               <FieldDescription className="text-[#FFFFFF]/65">
                 Deve ter pelo menos 8 caracteres.
               </FieldDescription>
@@ -111,12 +147,16 @@ export function SignupForm({ onSwitchTab, ...props }: SignupFormProps) {
               <FieldLabel htmlFor="confirm-password">
                 Confirmar Senha
               </FieldLabel>
-              <Input
-                id="confirm-password"
-                type="password"
-                className="border-[#FFFFFF]/20 bg-[#000000] text-[#FFFFFF] placeholder:text-[#FFFFFF]/40 focus-visible:border-[#DD050A]"
-                required
-              />
+                <Input
+                  id="confirm-password"
+                  name="confirmPassword"
+                  type="password"
+                  className="border-[#FFFFFF]/20 bg-[#000000] text-[#FFFFFF] placeholder:text-[#FFFFFF]/40 focus-visible:border-[#DD050A]"
+                  autoComplete="new-password"
+                  required
+                  value={confirmPassword}
+                  onChange={(event) => setConfirmPassword(event.target.value)}
+                />
               <FieldDescription className="text-[#FFFFFF]/65">Por favor, confirme sua senha.</FieldDescription>
             </Field>
             <Field>

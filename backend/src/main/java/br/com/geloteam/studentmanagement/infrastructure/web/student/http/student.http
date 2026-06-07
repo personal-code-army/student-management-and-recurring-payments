@@ -1,0 +1,83 @@
+### Create student
+POST http://localhost:8080/api/students
+Authorization: Bearer {{token}}
+Content-Type: application/json
+
+{
+  "name": "João Silva",
+  "cpf": "12345678901",
+  "birthDate": "1995-05-20",
+  "phone": "11999999999",
+  "email": "joao@example.com",
+  "address": "Rua das Flores, 123",
+  "planId": 1,
+  "active": true
+}
+
+###
+
+### List all students
+GET http://localhost:8080/api/students
+Authorization: Bearer {{token}}
+
+###
+
+### Search by name (accent/case insensitive)
+GET http://localhost:8080/api/students?name=joao
+Authorization: Bearer {{token}}
+
+###
+
+### Filter by payment status
+GET http://localhost:8080/api/students?paymentStatus=A receber
+Authorization: Bearer {{token}}
+
+###
+
+### Filter by age range
+GET http://localhost:8080/api/students?minAge=18&maxAge=30
+Authorization: Bearer {{token}}
+
+###
+
+### Filter by active status
+GET http://localhost:8080/api/students?active=true
+Authorization: Bearer {{token}}
+
+###
+
+### Get student by ID
+GET http://localhost:8080/api/students/1
+Authorization: Bearer {{token}}
+
+###
+
+### Update student
+PUT http://localhost:8080/api/students/1
+Authorization: Bearer {{token}}
+Content-Type: application/json
+
+{
+  "name": "João Silva Atualizado",
+  "cpf": "12345678901",
+  "birthDate": "1995-05-20",
+  "phone": "11988888888",
+  "email": "joao.novo@example.com",
+  "address": "Rua Nova, 456",
+  "planId": 1,
+  "active": true
+}
+
+###
+
+### Delete student
+DELETE http://localhost:8080/api/students/1
+Authorization: Bearer {{token}}
+
+###
+
+### Get student subscriptions
+GET http://localhost:8080/api/students/1/subscriptions
+Authorization: Bearer {{token}}
+
+###
