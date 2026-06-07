@@ -97,8 +97,7 @@ export default function Dashboard() {
 					<SidebarTrigger className="text-zinc-600 dark:text-zinc-400 hover:text-black dark:hover:text-white" />
 					<div
 						aria-hidden
-						className="shrink-0 self-center"
-						style={{ width: "1px", height: "20px", backgroundColor: "rgba(255,255,255,0.45)" }}
+						className="w-px h-5 bg-zinc-200 dark:bg-zinc-700 shrink-0 self-center"
 					/>
 					<div>
 						<h1 className="text-sm font-semibold text-black dark:text-white leading-none">Visão Geral</h1>

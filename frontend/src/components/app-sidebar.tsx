@@ -49,7 +49,7 @@ export function AppSidebar() {
     router.replace("/login")
   }
 
-  const isActive = (url: string) => pathname === url || pathname.startsWith(`${url}/`)
+  const isActive = (url: string) => pathname === url || pathname?.startsWith(`${url}/`) || false
   const inicial = usuario?.name?.trim().charAt(0).toUpperCase() ?? "?"
 
   return (

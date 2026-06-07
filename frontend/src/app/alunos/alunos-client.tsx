@@ -673,26 +673,14 @@ export function AlunosClient() {
                     className={FORM_SELECT_CLASS}
                   >
                     <option value="">Sem plano</option>
+                    {form.planId && !planos.some(p => String(p.id) === form.planId) && (
+                      <option value={form.planId}>Plano atual (id: {form.planId})</option>
+                    )}
                     {planos.map(p => (
                       <option key={p.id} value={String(p.id)}>{p.name}</option>
                     ))}
                   </select>
                 </div>
-              <div className="flex flex-col gap-1.5">
-                <Label htmlFor="plano" className={labelClass}>Plano</Label>
-                <select
-                  id="plano"
-                  value={form.planId}
-                  onChange={e => setForm(f => ({ ...f, planId: e.target.value }))}
-                  className={FORM_SELECT_CLASS}
-                >
-                  <option value="">Sem plano</option>
-                  {planos.map(plano => (
-                    <option key={plano.id} value={plano.id}>
-                      {plano.name}
-                    </option>
-                  ))}
-                </select>
               </div>
 
               <div className="flex flex-col gap-1.5">
