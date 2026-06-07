@@ -15,9 +15,8 @@ import {
 } from "@/components/ui/sheet"
 import { SidebarProvider, SidebarTrigger } from "@/components/ui/sidebar"
 import { AppSidebar } from "@/components/app-sidebar"
-import { Separator } from "@/components/ui/separator"
 import {
-  Users, UserCheck, UserX, Clock, TrendingUp, Plus,
+  Users, UserCheck, UserX, Star, TrendingUp, Plus,
   Phone, Pencil, Trash2, ChevronLeft, ChevronRight, Search,
 } from "lucide-react"
 import { api } from "@/lib/api"
@@ -36,6 +35,13 @@ interface Aluno {
   address?: string | null
   planId?: number | null
   active: boolean
+}
+
+interface Plano {
+  id: number
+  name: string
+  monthlyAmount?: number | null
+  frequency?: number | null
 }
 
 interface FormState {
@@ -73,12 +79,12 @@ const FORM_VAZIO: FormState = {
 }
 
 const STATUS_STYLE: Record<"Ativo" | "Inativo", string> = {
-  Ativo: "border-[#00FF00]/30 bg-[#00FF00]/10 text-[#00FF00]",
-  Inativo: "border-[#FFFFFF]/20 bg-[#FFFFFF]/8 text-[#FFFFFF]/50",
+  Ativo: "border-emerald-500/30 bg-emerald-500/10 text-emerald-600 dark:border-[#00FF00]/30 dark:bg-[#00FF00]/10 dark:text-[#00FF00]",
+  Inativo: "border-zinc-300 bg-zinc-100 text-zinc-500 dark:border-[#FFFFFF]/20 dark:bg-[#FFFFFF]/8 dark:text-[#FFFFFF]/50",
 }
 
-const SELECT_CLASS = "h-8 rounded-md border border-[#FFFFFF]/15 bg-[#000000] px-2.5 text-xs text-[#FFFFFF] focus:border-[#DD050A]/50 focus:outline-none"
-const FORM_SELECT_CLASS = "h-9 w-full rounded-md border border-[#FFFFFF]/15 bg-[#000000] px-3 text-sm text-[#FFFFFF] focus:border-[#DD050A]/50 focus:outline-none"
+const SELECT_CLASS = "h-8 rounded-md border border-zinc-300 bg-white px-2.5 text-xs text-zinc-900 focus:border-[#DD050A]/50 focus:outline-none dark:border-[#FFFFFF]/15 dark:bg-[#000000] dark:text-[#FFFFFF]"
+const FORM_SELECT_CLASS = "h-9 w-full rounded-md border border-zinc-300 bg-white px-3 text-sm text-zinc-900 focus:border-[#DD050A]/50 focus:outline-none dark:border-[#FFFFFF]/15 dark:bg-[#000000] dark:text-[#FFFFFF]"
 
 function normalizeIsoDate(value: string): string {
   if (!value) return ""
@@ -116,6 +122,7 @@ export function AlunosClient() {
   const [form, setForm] = useState<FormState>(FORM_VAZIO)
   const [carregando, setCarregando] = useState(true)
   const [erro, setErro] = useState<string | null>(null)
+  const [planos, setPlanos] = useState<Plano[]>([])
   const [apiError, setApiError] = useState<ApiErrorInfo | null>(null)
 
   const carregarAlunos = useCallback(async () => {
@@ -148,6 +155,18 @@ export function AlunosClient() {
     void carregarPlanos()
   }, [carregarAlunos, carregarPlanos])
 
+  useEffect(() => {
+    api.get<ApiResponse<Plano[]>>("/api/plans")
+      .then(res => setPlanos(Array.isArray(res.data?.data) ? res.data.data : []))
+      .catch(err => console.error("Erro ao carregar planos", err))
+  }, [])
+
+  const planoPorId = useMemo(() => {
+    const map = new Map<number, Plano>()
+    planos.forEach(p => map.set(p.id, p))
+    return map
+  }, [planos])
+
   const filtrados = useMemo(() => alunos
     .filter(a => {
       if (busca === "") return true
@@ -170,7 +189,19 @@ export function AlunosClient() {
 
   const ativos = alunos.filter(a => a.active).length
   const inativos = alunos.filter(a => !a.active).length
-  const comPlano = alunos.filter(a => a.planId != null).length
+  const planoPopular = useMemo(() => {
+    const contagem = new Map<number, number>()
+    for (const a of alunos) {
+      if (a.planId != null) contagem.set(a.planId, (contagem.get(a.planId) ?? 0) + 1)
+    }
+    let melhorId: number | null = null
+    let melhorQtd = 0
+    for (const [id, qtd] of contagem) {
+      if (qtd > melhorQtd) { melhorQtd = qtd; melhorId = id }
+    }
+    if (melhorId == null) return null
+    return { nome: planoPorId.get(melhorId)?.name ?? `#${melhorId}`, qtd: melhorQtd }
+  }, [alunos, planoPorId])
   const emailValido = useMemo(() => isValidEmail(form.email), [form.email])
   const emailInvalido = form.email.trim() !== "" && !emailValido
 
@@ -264,27 +295,31 @@ export function AlunosClient() {
     }
   }
 
-  const labelClass = "text-xs font-medium text-[#FFFFFF]/80"
-  const inputClass = "border-[#FFFFFF]/15 bg-[#000000] text-[#FFFFFF] placeholder:text-[#FFFFFF]/30 focus-visible:border-[#DD050A]/50"
+  const labelClass = "text-xs font-medium text-zinc-700 dark:text-[#FFFFFF]/80"
+  const inputClass = "border-zinc-300 bg-white text-zinc-900 placeholder:text-zinc-400 focus-visible:border-[#DD050A]/50 dark:border-[#FFFFFF]/15 dark:bg-[#000000] dark:text-[#FFFFFF] dark:placeholder:text-[#FFFFFF]/30"
 
   return (
     <SidebarProvider>
       <AppSidebar />
-      <div className="flex min-h-screen flex-1 flex-col bg-[#000000] text-[#FFFFFF]">
+      <div className="flex min-h-screen flex-1 flex-col bg-white text-zinc-900 dark:bg-[#000000] dark:text-[#FFFFFF]">
 
         {/* Header */}
-        <header className="sticky top-0 z-10 flex items-center justify-between gap-3 border-b border-[#FFFFFF]/10 bg-[#020203]/90 px-4 py-3 backdrop-blur sm:px-6 sm:py-4">
+        <header className="sticky top-0 z-10 flex items-center justify-between gap-3 border-b border-zinc-200 bg-white/90 px-4 py-3 backdrop-blur sm:px-6 sm:py-4 dark:border-[#FFFFFF]/10 dark:bg-[#020203]/90">
           <div className="flex items-center gap-3">
-            <SidebarTrigger className="text-[#FFFFFF]/70 hover:text-[#FFFFFF] md:hidden" />
-            <Separator orientation="vertical" className="h-5 bg-[#FFFFFF]/20 md:hidden" />
+            <SidebarTrigger className="text-zinc-600 hover:text-zinc-900 dark:text-[#FFFFFF]/70 dark:hover:text-[#FFFFFF]" />
+            <div
+              aria-hidden
+              className="shrink-0 self-center bg-zinc-300 dark:bg-[#FFFFFF]/45"
+              style={{ width: "1px", height: "20px" }}
+            />
             <div>
-              <h1 className="text-sm font-semibold leading-none text-[#FFFFFF]">Alunos</h1>
-              <p className="mt-0.5 text-xs text-[#FFFFFF]/60">Gerencie os alunos cadastrados</p>
+              <h1 className="text-sm font-semibold leading-none text-zinc-900 dark:text-[#FFFFFF]">Alunos</h1>
+              <p className="mt-0.5 text-xs text-zinc-500 dark:text-[#FFFFFF]/60">Gerencie os alunos cadastrados</p>
             </div>
           </div>
           <button
             onClick={abrirCriar}
-            className="flex items-center gap-2 rounded-lg border border-[#DD050A]/50 bg-[#DD050A]/15 px-3 py-2 text-xs font-medium text-[#FFFFFF] transition-colors hover:border-[#DD050A]/70 hover:bg-[#DD050A]/25"
+            className="flex items-center gap-2 rounded-lg border border-[#DD050A]/50 bg-[#DD050A]/15 px-3 py-2 text-xs font-medium text-[#DD050A] transition-colors hover:border-[#DD050A]/70 hover:bg-[#DD050A]/25 dark:text-[#FFFFFF]"
           >
             <Plus className="h-3.5 w-3.5" />
             <span className="hidden sm:inline">Novo Aluno</span>
@@ -301,19 +336,19 @@ export function AlunosClient() {
           <div className="grid grid-cols-2 gap-4 xl:grid-cols-4">
             {[
               { label: "Total de Alunos", valor: alunos.length, sub: "Base cadastrada", subClass: "text-[#DD050A]", icon: Users, IconExtra: TrendingUp },
-              { label: "Ativos", valor: ativos, sub: `${alunos.length > 0 ? Math.round((ativos / alunos.length) * 100) : 0}% do total`, subClass: "text-[#FFFFFF]/60", icon: UserCheck },
-              { label: "Com plano", valor: comPlano, sub: "Planos vinculados", subClass: "text-[#DD050A]", icon: Clock },
-              { label: "Inativos", valor: inativos, sub: "Sem plano ativo", subClass: "text-[#FFFFFF]/60", icon: UserX },
+              { label: "Ativos", valor: ativos, sub: `${alunos.length > 0 ? Math.round((ativos / alunos.length) * 100) : 0}% do total`, subClass: "text-zinc-500 dark:text-[#FFFFFF]/60", icon: UserCheck },
+              { label: "Plano popular", valor: planoPopular?.nome ?? "—", sub: planoPopular ? `${planoPopular.qtd} aluno${planoPopular.qtd !== 1 ? "s" : ""}` : "Nenhum vinculado", subClass: "text-[#DD050A]", icon: Star },
+              { label: "Inativos", valor: inativos, sub: "Sem plano ativo", subClass: "text-zinc-500 dark:text-[#FFFFFF]/60", icon: UserX },
             ].map(({ label, valor, sub, subClass, icon: Icon, IconExtra }) => (
-              <Card key={label} className="group border-[#FFFFFF]/12 bg-[#020203] transition-colors hover:border-[#DD050A]/50">
+              <Card key={label} className="group border-zinc-200 bg-white transition-colors hover:border-[#DD050A]/50 dark:border-[#FFFFFF]/12 dark:bg-[#020203]">
                 <CardHeader className="flex flex-row items-center justify-between px-4 pb-2 pt-4 sm:px-5">
-                  <CardTitle className="text-xs font-medium uppercase tracking-wider text-[#FFFFFF]/65">{label}</CardTitle>
-                  <span className="flex h-7 w-7 items-center justify-center rounded-md bg-[#FFFFFF]/10 transition-colors group-hover:bg-[#DD050A]/12">
-                    <Icon className="h-4 w-4 text-[#FFFFFF] transition-colors group-hover:text-[#DD050A]" />
+                  <CardTitle className="text-xs font-medium uppercase tracking-wider text-zinc-600 dark:text-[#FFFFFF]/65">{label}</CardTitle>
+                  <span className="flex h-7 w-7 items-center justify-center rounded-md bg-zinc-100 transition-colors group-hover:bg-[#DD050A]/12 dark:bg-[#FFFFFF]/10">
+                    <Icon className="h-4 w-4 text-zinc-900 transition-colors group-hover:text-[#DD050A] dark:text-[#FFFFFF]" />
                   </span>
                 </CardHeader>
                 <CardContent className="px-4 pb-4 sm:px-5">
-                  <p className="text-xl font-bold text-[#FFFFFF] sm:text-2xl">{valor}</p>
+                  <p className="text-xl font-bold text-zinc-900 sm:text-2xl dark:text-[#FFFFFF]">{valor}</p>
                   <p className={`mt-1 flex items-center gap-1 text-xs ${subClass}`}>
                     {IconExtra && <IconExtra className="h-3 w-3" />}{sub}
                   </p>
@@ -323,12 +358,12 @@ export function AlunosClient() {
           </div>
 
           {/* Tabela */}
-          <Card className="border-[#FFFFFF]/12 bg-[#020203]">
+          <Card className="border-zinc-200 bg-white dark:border-[#FFFFFF]/12 dark:bg-[#020203]">
             <CardHeader className="px-4 pb-3 pt-5 sm:px-5">
               <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
                 <div>
-                  <CardTitle className="text-base text-[#FFFFFF]">Lista de Alunos</CardTitle>
-                  <CardDescription className="text-xs text-[#FFFFFF]/60">
+                  <CardTitle className="text-base text-zinc-900 dark:text-[#FFFFFF]">Lista de Alunos</CardTitle>
+                  <CardDescription className="text-xs text-zinc-500 dark:text-[#FFFFFF]/60">
                     {filtrados.length} aluno{filtrados.length !== 1 ? "s" : ""} encontrado{filtrados.length !== 1 ? "s" : ""}
                   </CardDescription>
                 </div>
@@ -336,10 +371,13 @@ export function AlunosClient() {
                 {/* Filtros */}
                 <div className="flex flex-wrap items-center gap-2">
                   <div className="relative">
-                    <Search className="absolute left-2.5 top-1/2 h-3.5 w-3.5 -translate-y-1/2 text-[#FFFFFF]/40" />
+                    <Search className="absolute left-2.5 top-1/2 h-3.5 w-3.5 -translate-y-1/2 text-zinc-400 dark:text-[#FFFFFF]/40" />
                     <Input
                       type="search"
                       placeholder="Buscar por nome, e-mail ou CPF..."
+                      value={busca}
+                      onChange={e => mudarFiltro(() => setBusca(e.target.value))}
+                      className="h-8 w-full border-zinc-300 bg-white pl-8 text-xs text-zinc-900 placeholder:text-zinc-400 focus-visible:border-[#DD050A]/50 sm:w-44 dark:border-[#FFFFFF]/15 dark:bg-[#000000] dark:text-[#FFFFFF] dark:placeholder:text-[#FFFFFF]/35"
                       value={buscaDigitada}
                       onChange={e => setBuscaDigitada(e.target.value)}
                       onKeyDown={e => {
@@ -381,25 +419,26 @@ export function AlunosClient() {
                   Lista de alunos cadastrados com informações de contato, plano e status
                 </TableCaption>
                 <TableHeader>
-                  <TableRow className="border-[#FFFFFF]/10 hover:bg-transparent">
-                    <TableHead scope="col" className="text-xs uppercase text-[#FFFFFF]/60">Aluno</TableHead>
-                    <TableHead scope="col" className="hidden text-xs uppercase text-[#FFFFFF]/60 md:table-cell">Contato</TableHead>
-                    <TableHead scope="col" className="hidden text-xs uppercase text-[#FFFFFF]/60 sm:table-cell">CPF</TableHead>
-                    <TableHead scope="col" className="hidden text-xs uppercase text-[#FFFFFF]/60 lg:table-cell">Nascimento</TableHead>
-                    <TableHead scope="col" className="text-xs uppercase text-[#FFFFFF]/60">Status</TableHead>
-                    <TableHead scope="col" className="text-right text-xs uppercase text-[#FFFFFF]/60">Ações</TableHead>
+                  <TableRow className="border-zinc-200 hover:bg-transparent dark:border-[#FFFFFF]/10">
+                    <TableHead scope="col" className="text-xs uppercase text-zinc-500 dark:text-[#FFFFFF]/60">Aluno</TableHead>
+                    <TableHead scope="col" className="hidden text-xs uppercase text-zinc-500 md:table-cell dark:text-[#FFFFFF]/60">Contato</TableHead>
+                    <TableHead scope="col" className="hidden text-xs uppercase text-zinc-500 sm:table-cell dark:text-[#FFFFFF]/60">CPF</TableHead>
+                    <TableHead scope="col" className="hidden text-xs uppercase text-zinc-500 lg:table-cell dark:text-[#FFFFFF]/60">Nascimento</TableHead>
+                    <TableHead scope="col" className="hidden text-xs uppercase text-zinc-500 md:table-cell dark:text-[#FFFFFF]/60">Plano</TableHead>
+                    <TableHead scope="col" className="text-xs uppercase text-zinc-500 dark:text-[#FFFFFF]/60">Status</TableHead>
+                    <TableHead scope="col" className="text-right text-xs uppercase text-zinc-500 dark:text-[#FFFFFF]/60">Ações</TableHead>
                   </TableRow>
                 </TableHeader>
                 <TableBody>
                   {carregando ? (
                     <TableRow className="hover:bg-transparent">
-                      <TableCell colSpan={6} className="py-12 text-center text-sm text-[#FFFFFF]/40">
+                      <TableCell colSpan={7} className="py-12 text-center text-sm text-zinc-400 dark:text-[#FFFFFF]/40">
                         Carregando alunos...
                       </TableCell>
                     </TableRow>
                   ) : visiveis.length === 0 ? (
                     <TableRow className="hover:bg-transparent">
-                      <TableCell colSpan={6} className="py-12 text-center text-sm text-[#FFFFFF]/40">
+                      <TableCell colSpan={7} className="py-12 text-center text-sm text-zinc-400 dark:text-[#FFFFFF]/40">
                         Nenhum aluno encontrado com os filtros selecionados.
                       </TableCell>
                     </TableRow>
@@ -408,21 +447,24 @@ export function AlunosClient() {
                     return (
                       <TableRow
                         key={aluno.id}
-                        className={`border-[#FFFFFF]/10 transition-colors ${deletandoId === aluno.id ? "bg-[#DD050A]/8" : "hover:bg-[#FFFFFF]/5"}`}
+                        className={`border-zinc-200 transition-colors dark:border-[#FFFFFF]/10 ${deletandoId === aluno.id ? "bg-[#DD050A]/8" : "hover:bg-zinc-50 dark:hover:bg-[#FFFFFF]/5"}`}
                       >
                         <TableCell>
-                          <p className="font-medium text-[#FFFFFF]">{aluno.name}</p>
-                          <p className="mt-0.5 text-xs text-[#FFFFFF]/50 md:hidden">{aluno.email ?? "-"}</p>
+                          <p className="font-medium text-zinc-900 dark:text-[#FFFFFF]">{aluno.name}</p>
+                          <p className="mt-0.5 text-xs text-zinc-500 md:hidden dark:text-[#FFFFFF]/50">{aluno.email ?? "-"}</p>
                           {aluno.age != null && (
-                            <p className="mt-0.5 text-xs text-[#FFFFFF]/40">idade {aluno.age} anos</p>
+                            <p className="mt-0.5 text-xs text-zinc-400 dark:text-[#FFFFFF]/40">idade {aluno.age} anos</p>
                           )}
                         </TableCell>
                         <TableCell className="hidden md:table-cell">
-                          <p className="text-sm text-[#FFFFFF]/80">{aluno.email ?? "-"}</p>
-                          <p className="mt-0.5 text-xs text-[#FFFFFF]/50">{aluno.phone ?? "-"}</p>
+                          <p className="text-sm text-zinc-700 dark:text-[#FFFFFF]/80">{aluno.email ?? "-"}</p>
+                          <p className="mt-0.5 text-xs text-zinc-500 dark:text-[#FFFFFF]/50">{aluno.phone ?? "-"}</p>
                         </TableCell>
-                        <TableCell className="hidden text-[#FFFFFF]/70 sm:table-cell">{aluno.cpf}</TableCell>
-                        <TableCell className="hidden text-[#FFFFFF]/70 lg:table-cell">{formatarData(aluno.birthDate)}</TableCell>
+                        <TableCell className="hidden text-zinc-600 sm:table-cell dark:text-[#FFFFFF]/70">{aluno.cpf}</TableCell>
+                        <TableCell className="hidden text-zinc-600 lg:table-cell dark:text-[#FFFFFF]/70">{formatarData(aluno.birthDate)}</TableCell>
+                        <TableCell className="hidden text-zinc-600 md:table-cell dark:text-[#FFFFFF]/70">
+                          {aluno.planId != null ? (planoPorId.get(aluno.planId)?.name ?? `#${aluno.planId}`) : "-"}
+                        </TableCell>
                         <TableCell>
                           <Badge variant="outline" className={STATUS_STYLE[aluno.active ? "Ativo" : "Inativo"]}>
                             {aluno.active ? "Ativo" : "Inativo"}
@@ -431,7 +473,7 @@ export function AlunosClient() {
                         <TableCell className="text-right">
                           {deletandoId === aluno.id ? (
                             <div className="flex items-center justify-end gap-1.5">
-                              <span className="hidden text-xs text-[#FFFFFF]/60 sm:inline">Excluir?</span>
+                              <span className="hidden text-xs text-zinc-500 sm:inline dark:text-[#FFFFFF]/60">Excluir?</span>
                               <button
                                 onClick={() => excluir(aluno.id)}
                                 className="rounded border border-[#DD050A]/60 bg-[#DD050A]/20 px-2.5 py-1 text-xs font-medium text-[#DD050A] transition-colors hover:bg-[#DD050A]/35"
@@ -440,7 +482,7 @@ export function AlunosClient() {
                               </button>
                               <button
                                 onClick={() => setDeletandoId(null)}
-                                className="rounded border border-[#FFFFFF]/20 bg-transparent px-2.5 py-1 text-xs font-medium text-[#FFFFFF]/60 transition-colors hover:bg-[#FFFFFF]/8"
+                                className="rounded border border-zinc-300 bg-transparent px-2.5 py-1 text-xs font-medium text-zinc-600 transition-colors hover:bg-zinc-100 dark:border-[#FFFFFF]/20 dark:text-[#FFFFFF]/60 dark:hover:bg-[#FFFFFF]/8"
                               >
                                 Não
                               </button>
@@ -453,7 +495,7 @@ export function AlunosClient() {
                                   target="_blank"
                                   rel="noreferrer"
                                   aria-label={`Contatar ${aluno.name} via WhatsApp (abre nova aba)`}
-                                  className="inline-flex h-7 w-7 items-center justify-center rounded-md border border-[#FFFFFF]/15 text-[#FFFFFF]/60 transition-colors hover:border-[#DD050A]/40 hover:bg-[#DD050A]/10 hover:text-[#FFFFFF]"
+                                  className="inline-flex h-7 w-7 items-center justify-center rounded-md border border-zinc-300 text-zinc-600 transition-colors hover:border-[#DD050A]/40 hover:bg-[#DD050A]/10 hover:text-zinc-900 dark:border-[#FFFFFF]/15 dark:text-[#FFFFFF]/60 dark:hover:text-[#FFFFFF]"
                                 >
                                   <Phone className="h-3.5 w-3.5" />
                                 </a>
@@ -461,7 +503,7 @@ export function AlunosClient() {
                                 <span
                                   aria-label={`Contato WhatsApp indisponivel para ${aluno.name}`}
                                   aria-disabled="true"
-                                  className="inline-flex h-7 w-7 items-center justify-center rounded-md border border-[#FFFFFF]/10 text-[#FFFFFF]/30 cursor-not-allowed"
+                                  className="inline-flex h-7 w-7 items-center justify-center rounded-md border border-zinc-200 text-zinc-300 cursor-not-allowed dark:border-[#FFFFFF]/10 dark:text-[#FFFFFF]/30"
                                 >
                                   <Phone className="h-3.5 w-3.5" />
                                 </span>
@@ -469,14 +511,14 @@ export function AlunosClient() {
                               <button
                                 onClick={() => abrirEditar(aluno)}
                                 aria-label={`Editar ${aluno.name}`}
-                                className="inline-flex h-7 w-7 items-center justify-center rounded-md border border-[#FFFFFF]/15 text-[#FFFFFF]/60 transition-colors hover:border-[#DD050A]/40 hover:bg-[#DD050A]/10 hover:text-[#FFFFFF]"
+                                className="inline-flex h-7 w-7 items-center justify-center rounded-md border border-zinc-300 text-zinc-600 transition-colors hover:border-[#DD050A]/40 hover:bg-[#DD050A]/10 hover:text-zinc-900 dark:border-[#FFFFFF]/15 dark:text-[#FFFFFF]/60 dark:hover:text-[#FFFFFF]"
                               >
                                 <Pencil className="h-3.5 w-3.5" />
                               </button>
                               <button
                                 onClick={() => setDeletandoId(aluno.id)}
                                 aria-label={`Excluir ${aluno.name}`}
-                                className="inline-flex h-7 w-7 items-center justify-center rounded-md border border-[#FFFFFF]/15 text-[#FFFFFF]/60 transition-colors hover:border-[#DD050A]/40 hover:bg-[#DD050A]/10 hover:text-[#DD050A]"
+                                className="inline-flex h-7 w-7 items-center justify-center rounded-md border border-zinc-300 text-zinc-600 transition-colors hover:border-[#DD050A]/40 hover:bg-[#DD050A]/10 hover:text-[#DD050A] dark:border-[#FFFFFF]/15 dark:text-[#FFFFFF]/60"
                               >
                                 <Trash2 className="h-3.5 w-3.5" />
                               </button>
@@ -490,8 +532,8 @@ export function AlunosClient() {
               </Table>
 
               {/* Paginação */}
-              <div className="mt-4 flex items-center justify-between border-t border-[#FFFFFF]/10 pt-4">
-                <p className="text-xs text-[#FFFFFF]/50">
+              <div className="mt-4 flex items-center justify-between border-t border-zinc-200 pt-4 dark:border-[#FFFFFF]/10">
+                <p className="text-xs text-zinc-500 dark:text-[#FFFFFF]/50">
                   {filtrados.length === 0
                     ? "Nenhum resultado"
                     : `${(paginaAtual - 1) * POR_PAGINA + 1}–${Math.min(paginaAtual * POR_PAGINA, filtrados.length)} de ${filtrados.length} aluno${filtrados.length !== 1 ? "s" : ""}`
@@ -503,13 +545,13 @@ export function AlunosClient() {
                       onClick={() => setPagina(p => Math.max(1, p - 1))}
                       disabled={paginaAtual === 1}
                       aria-label="Página anterior"
-                      className="inline-flex h-7 w-7 items-center justify-center rounded-md border border-[#FFFFFF]/15 text-[#FFFFFF]/60 transition-colors hover:border-[#FFFFFF]/30 hover:text-[#FFFFFF] disabled:pointer-events-none disabled:opacity-30"
+                      className="inline-flex h-7 w-7 items-center justify-center rounded-md border border-zinc-300 text-zinc-600 transition-colors hover:border-zinc-400 hover:text-zinc-900 disabled:pointer-events-none disabled:opacity-30 dark:border-[#FFFFFF]/15 dark:text-[#FFFFFF]/60 dark:hover:border-[#FFFFFF]/30 dark:hover:text-[#FFFFFF]"
                     >
                       <ChevronLeft className="h-3.5 w-3.5" />
                     </button>
                     {numerasDePagina(paginaAtual, totalPaginas).map((num, idx) =>
                       num === "…" ? (
-                        <span key={`ellipsis-${idx}`} className="px-1 text-xs text-[#FFFFFF]/40">…</span>
+                        <span key={`ellipsis-${idx}`} className="px-1 text-xs text-zinc-400 dark:text-[#FFFFFF]/40">…</span>
                       ) : (
                         <button
                           key={num}
@@ -518,7 +560,7 @@ export function AlunosClient() {
                           aria-current={num === paginaAtual ? "page" : undefined}
                           className={`inline-flex h-7 w-7 items-center justify-center rounded-md text-xs font-medium transition-colors ${num === paginaAtual
                               ? "bg-[#DD050A] text-[#FFFFFF]"
-                              : "border border-[#FFFFFF]/15 text-[#FFFFFF]/60 hover:border-[#FFFFFF]/30 hover:text-[#FFFFFF]"
+                              : "border border-zinc-300 text-zinc-600 hover:border-zinc-400 hover:text-zinc-900 dark:border-[#FFFFFF]/15 dark:text-[#FFFFFF]/60 dark:hover:border-[#FFFFFF]/30 dark:hover:text-[#FFFFFF]"
                             }`}
                         >
                           {num}
@@ -529,7 +571,7 @@ export function AlunosClient() {
                       onClick={() => setPagina(p => Math.min(totalPaginas, p + 1))}
                       disabled={paginaAtual === totalPaginas}
                       aria-label="Próxima página"
-                      className="inline-flex h-7 w-7 items-center justify-center rounded-md border border-[#FFFFFF]/15 text-[#FFFFFF]/60 transition-colors hover:border-[#FFFFFF]/30 hover:text-[#FFFFFF] disabled:pointer-events-none disabled:opacity-30"
+                      className="inline-flex h-7 w-7 items-center justify-center rounded-md border border-zinc-300 text-zinc-600 transition-colors hover:border-zinc-400 hover:text-zinc-900 disabled:pointer-events-none disabled:opacity-30 dark:border-[#FFFFFF]/15 dark:text-[#FFFFFF]/60 dark:hover:border-[#FFFFFF]/30 dark:hover:text-[#FFFFFF]"
                     >
                       <ChevronRight className="h-3.5 w-3.5" />
                     </button>
@@ -545,13 +587,13 @@ export function AlunosClient() {
       <Sheet open={sheetAberto} onOpenChange={setSheetAberto}>
         <SheetContent
           side="right"
-          className="flex w-full flex-col border-l border-[#FFFFFF]/10 bg-[#020203] text-[#FFFFFF] sm:max-w-md"
+          className="flex w-full flex-col border-l border-zinc-200 bg-white text-zinc-900 sm:max-w-md dark:border-[#FFFFFF]/10 dark:bg-[#020203] dark:text-[#FFFFFF]"
         >
-          <SheetHeader className="border-b border-[#FFFFFF]/10 px-6 pb-4 pt-6">
-            <SheetTitle className="text-base text-[#FFFFFF]">
+          <SheetHeader className="border-b border-zinc-200 px-6 pb-4 pt-6 dark:border-[#FFFFFF]/10">
+            <SheetTitle className="text-base text-zinc-900 dark:text-[#FFFFFF]">
               {modo === "criar" ? "Novo Aluno" : "Editar Aluno"}
             </SheetTitle>
-            <SheetDescription className="text-xs text-[#FFFFFF]/55">
+            <SheetDescription className="text-xs text-zinc-500 dark:text-[#FFFFFF]/55">
               {modo === "criar"
                 ? "Preencha os dados para cadastrar um novo aluno."
                 : "Atualize as informações do aluno."}
@@ -582,7 +624,7 @@ export function AlunosClient() {
               <div className="flex flex-col gap-1.5">
                 <Label htmlFor="nascimento" className={labelClass}>Data de nascimento</Label>
                 <Input id="nascimento" type="date" value={form.birthDate} onChange={e => setForm(f => ({ ...f, birthDate: e.target.value }))}
-                  className={`${inputClass} [color-scheme:dark]`} />
+                  className={`${inputClass} [color-scheme:light] dark:[color-scheme:dark]`} />
               </div>
 
               <div className="grid grid-cols-2 gap-4">
@@ -616,21 +658,29 @@ export function AlunosClient() {
                 </div>
               </div>
 
-              <div className="flex flex-col gap-1.5">
-                <Label htmlFor="plano" className={labelClass}>Plano</Label>
-                <select
-                  id="plano"
-                  value={form.planId}
-                  onChange={e => setForm(f => ({ ...f, planId: e.target.value }))}
-                  className={FORM_SELECT_CLASS}
-                >
-                  <option value="">Sem plano</option>
-                  {planos.map(plano => (
-                    <option key={plano.id} value={plano.id}>
-                      {plano.name}
-                    </option>
-                  ))}
-                </select>
+              <div className="grid grid-cols-2 gap-4">
+                <div className="flex flex-col gap-1.5">
+                  <Label htmlFor="endereco" className={labelClass}>Endereco</Label>
+                  <Input id="endereco" value={form.address} onChange={e => setForm(f => ({ ...f, address: e.target.value }))}
+                    placeholder="Rua, numero, bairro" className={inputClass} />
+                </div>
+                <div className="flex flex-col gap-1.5">
+                  <Label htmlFor="plano" className={labelClass}>Plano</Label>
+                  <select
+                    id="plano"
+                    value={form.planId}
+                    onChange={e => setForm(f => ({ ...f, planId: e.target.value }))}
+                    className={FORM_SELECT_CLASS}
+                  >
+                    <option value="">Sem plano</option>
+                    {form.planId && !planos.some(p => String(p.id) === form.planId) && (
+                      <option value={form.planId}>Plano atual (id: {form.planId})</option>
+                    )}
+                    {planos.map(p => (
+                      <option key={p.id} value={String(p.id)}>{p.name}</option>
+                    ))}
+                  </select>
+                </div>
               </div>
 
               <div className="flex flex-col gap-1.5">
@@ -649,9 +699,9 @@ export function AlunosClient() {
             </div>
           </div>
 
-          <SheetFooter className="flex-row gap-2 border-t border-[#FFFFFF]/10 px-6 py-4">
+          <SheetFooter className="flex-row gap-2 border-t border-zinc-200 px-6 py-4 dark:border-[#FFFFFF]/10">
             <SheetClose asChild>
-              <button className="flex-1 rounded-lg border border-[#FFFFFF]/20 py-2 text-sm text-[#FFFFFF]/70 transition-colors hover:bg-[#FFFFFF]/5 hover:text-[#FFFFFF]">
+              <button className="flex-1 rounded-lg border border-zinc-300 py-2 text-sm text-zinc-600 transition-colors hover:bg-zinc-100 hover:text-zinc-900 dark:border-[#FFFFFF]/20 dark:text-[#FFFFFF]/70 dark:hover:bg-[#FFFFFF]/5 dark:hover:text-[#FFFFFF]">
                 Cancelar
               </button>
             </SheetClose>

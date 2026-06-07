@@ -268,7 +268,7 @@ function SidebarTrigger({
       variant="ghost"
       size="default"
       className={cn(
-        "group relative h-9 rounded-full border border-[#FFFFFF]/25 bg-[#020203] px-3 text-[#FFFFFF] transition-all duration-300 hover:border-[#DD050A]/50 hover:text-[#DD050A]",
+        "group relative h-9 rounded-full border border-zinc-300 bg-zinc-100 px-3 text-zinc-700 transition-all duration-300 hover:border-[#DD050A]/50 hover:text-[#DD050A] dark:border-[#FFFFFF]/25 dark:bg-zinc-800 dark:text-[#FFFFFF]",
         className
       )}
       onClick={(event) => {

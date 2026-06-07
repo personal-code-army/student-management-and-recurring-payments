@@ -1,3 +1,6 @@
+"use client";
+
+import { useEffect, useMemo, useState } from "react";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
@@ -9,11 +12,33 @@ import {
 	TableHeader,
 	TableRow,
 } from "@/components/ui/table";
-import { CircleAlert, CircleDollarSign, Clock, MessageCircle, TrendingUp, Users } from "lucide-react";
+import { CircleAlert, CircleDollarSign, Clock, Users } from "lucide-react";
 import { SidebarProvider, SidebarTrigger } from "@/components/ui/sidebar";
 import { AppSidebar } from "@/components/app-sidebar";
-import { Separator } from "@/components/ui/separator";
+import { api } from "@/lib/api";
 
+type ApiResponse<T> = { data: T };
+
+interface Payment {
+	id: number;
+	value: number;
+	status: string;
+}
+
+interface StudentLite {
+	id: number;
+	active: boolean;
+}
+
+const brl = new Intl.NumberFormat("pt-BR", {
+	style: "currency",
+	currency: "BRL",
+	maximumFractionDigits: 0,
+});
+
+// MOCK — pendente de backend: "A Receber", "Atrasados" e esta tabela precisam de
+// status de pagamento confirmados e de um payload com nome de aluno/plano.
+// Ver contrato pendente (PaymentResponse enriquecido + /api/dashboard/summary).
 const pagamentos = [
 	{ id: 1, aluno: "Felipe Souza", plano: "Mensal", valor: "R$ 150,00", vencimento: "01/03/2026", status: "Pago" },
 	{ id: 2, aluno: "Ana Lima", plano: "Trimestral", valor: "R$ 400,00", vencimento: "05/03/2026", status: "Pendente" },
@@ -29,6 +54,39 @@ const statusStyle: Record<string, string> = {
 };
 
 export default function Dashboard() {
+	const [pagamentosApi, setPagamentosApi] = useState<Payment[]>([]);
+	const [clientesAtivos, setClientesAtivos] = useState(0);
+	const [carregando, setCarregando] = useState(true);
+	const [erro, setErro] = useState<string | null>(null);
+
+	useEffect(() => {
+		let ativo = true;
+		(async () => {
+			try {
+				setErro(null);
+				setCarregando(true);
+				const [pagRes, alunosRes] = await Promise.all([
+					api.get<ApiResponse<Payment[]>>("/api/payments"),
+					api.get<ApiResponse<StudentLite[]>>("/api/students", { params: { active: true } }),
+				]);
+				if (!ativo) return;
+				setPagamentosApi(Array.isArray(pagRes.data?.data) ? pagRes.data.data : []);
+				setClientesAtivos(Array.isArray(alunosRes.data?.data) ? alunosRes.data.data.length : 0);
+			} catch (err) {
+				console.error("Erro ao carregar dados do dashboard", err);
+				if (ativo) setErro("Nao foi possivel carregar os dados do dashboard.");
+			} finally {
+				if (ativo) setCarregando(false);
+			}
+		})();
+		return () => {
+			ativo = false;
+		};
+	}, []);
+
+	const pagos = useMemo(() => pagamentosApi.filter((p) => p.status === "PAID"), [pagamentosApi]);
+	const receitaTotal = useMemo(() => pagos.reduce((soma, p) => soma + (p.value ?? 0), 0), [pagos]);
+
 	return (
 		<SidebarProvider>
 			<AppSidebar />
@@ -37,7 +95,10 @@ export default function Dashboard() {
 				{/* Header */}
 				<header className="flex items-center gap-3 px-6 py-4 border-b border-zinc-200 dark:border-zinc-800 bg-white dark:bg-zinc-950 sticky top-0 z-10">
 					<SidebarTrigger className="text-zinc-600 dark:text-zinc-400 hover:text-black dark:hover:text-white" />
-					<Separator orientation="vertical" className="h-5 bg-zinc-300 dark:bg-zinc-700" />
+					<div
+						aria-hidden
+						className="w-px h-5 bg-zinc-200 dark:bg-zinc-700 shrink-0 self-center"
+					/>
 					<div>
 						<h1 className="text-sm font-semibold text-black dark:text-white leading-none">Visão Geral</h1>
 						<p className="text-xs text-zinc-600 dark:text-zinc-500 mt-0.5">Bem-vindo de volta</p>
@@ -46,22 +107,32 @@ export default function Dashboard() {
 
 				<main className="flex-1 p-6 space-y-6">
 
+					{erro && (
+						<div className="rounded-md border border-red-500/40 bg-red-500/10 px-3 py-2 text-xs text-red-500">
+							{erro}
+						</div>
+					)}
+
 					{/* KPI Cards */}
 					<div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-4">
 
+						{/* Receita Total — dados reais (pagamentos com status PAID) */}
 						<Card className="bg-white dark:bg-zinc-900 border-zinc-200 dark:border-zinc-800">
 							<CardHeader className="flex flex-row items-center justify-between pb-2 pt-4 px-5">
 								<CardTitle className="text-xs font-medium text-zinc-600 dark:text-zinc-400 uppercase">Receita Total</CardTitle>
 								<CircleDollarSign className="h-4 w-4 text-emerald-500" />
 							</CardHeader>
 							<CardContent className="px-5 pb-4">
-								<p className="text-2xl font-bold text-black dark:text-white">R$ 12.400</p>
-								<p className="text-xs text-emerald-500 mt-1 flex items-center gap-1">
-									<TrendingUp className="h-3 w-3" /> +8% este mês
+								<p className="text-2xl font-bold text-black dark:text-white">
+									{carregando ? "—" : brl.format(receitaTotal)}
+								</p>
+								<p className="text-xs text-zinc-600 dark:text-zinc-500 mt-1">
+									{carregando ? "Carregando..." : `${pagos.length} pagamento${pagos.length !== 1 ? "s" : ""} recebido${pagos.length !== 1 ? "s" : ""}`}
 								</p>
 							</CardContent>
 						</Card>
 
+						{/* A Receber — MOCK (pendente de backend) */}
 						<Card className="bg-white dark:bg-zinc-900 border-zinc-200 dark:border-zinc-800">
 							<CardHeader className="flex flex-row items-center justify-between pb-2 pt-4 px-5">
 								<CardTitle className="text-xs font-medium text-zinc-600 dark:text-zinc-400 uppercase">A Receber</CardTitle>
@@ -73,6 +144,7 @@ export default function Dashboard() {
 							</CardContent>
 						</Card>
 
+						{/* Atrasados — MOCK (pendente de backend) */}
 						<Card className="bg-white dark:bg-zinc-900 border-zinc-200 dark:border-zinc-800">
 							<CardHeader className="flex flex-row items-center justify-between pb-2 pt-4 px-5">
 								<CardTitle className="text-xs font-medium text-zinc-600 dark:text-zinc-400 uppercase">Atrasados</CardTitle>
@@ -84,20 +156,23 @@ export default function Dashboard() {
 							</CardContent>
 						</Card>
 
+						{/* Clientes Ativos — dados reais (/api/students?active=true) */}
 						<Card className="bg-white dark:bg-zinc-900 border-zinc-200 dark:border-zinc-800">
 							<CardHeader className="flex flex-row items-center justify-between pb-2 pt-4 px-5">
 								<CardTitle className="text-xs font-medium text-zinc-600 dark:text-zinc-400 uppercase">Clientes Ativos</CardTitle>
 								<Users className="h-4 w-4 text-blue-500" />
 							</CardHeader>
 							<CardContent className="px-5 pb-4">
-								<p className="text-2xl font-bold text-black dark:text-white">20</p>
-								<p className="text-xs text-zinc-600 dark:text-zinc-500 mt-1">+2 este mês</p>
+								<p className="text-2xl font-bold text-black dark:text-white">
+									{carregando ? "—" : clientesAtivos}
+								</p>
+								<p className="text-xs text-zinc-600 dark:text-zinc-500 mt-1">Base ativa</p>
 							</CardContent>
 						</Card>
 
 					</div>
 
-					{/* Tabela */}
+					{/* Tabela — MOCK (pendente de backend: pagamento com nome de aluno/plano) */}
 					<Tabs defaultValue="recentes">
 						<TabsList className="bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800">
 							<TabsTrigger value="recentes">Recentes</TabsTrigger>
