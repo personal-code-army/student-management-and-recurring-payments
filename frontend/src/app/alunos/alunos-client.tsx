@@ -45,6 +45,7 @@ interface Plano {
 }
 
 interface FormState {
+
   name: string
   cpf: string
   birthDate: string
@@ -53,11 +54,6 @@ interface FormState {
   address: string
   planId: string
   active: boolean
-}
-
-interface Plano {
-  id: number
-  name: string
 }
 
 type ApiResponse<T> = {
@@ -122,7 +118,6 @@ export function AlunosClient() {
   const [form, setForm] = useState<FormState>(FORM_VAZIO)
   const [carregando, setCarregando] = useState(true)
   const [erro, setErro] = useState<string | null>(null)
-  const [planos, setPlanos] = useState<Plano[]>([])
   const [apiError, setApiError] = useState<ApiErrorInfo | null>(null)
 
   const carregarAlunos = useCallback(async () => {
