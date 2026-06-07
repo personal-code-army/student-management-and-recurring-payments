@@ -20,6 +20,9 @@ import {
   Phone, Pencil, Trash2, ChevronLeft, ChevronRight, Search,
 } from "lucide-react"
 import { api } from "@/lib/api"
+import { formatCpf, formatPhone, isValidEmail, normalizeCpf, normalizePhone } from "@/lib/validators"
+import { ApiErrorScreen } from "@/components/api-error-screen"
+import { type ApiErrorInfo, getApiErrorInfo, resolveApiErrorContent } from "@/lib/api-errors"
 
 interface Aluno {
   id: number
@@ -50,6 +53,11 @@ interface FormState {
   address: string
   planId: string
   active: boolean
+}
+
+interface Plano {
+  id: number
+  name: string
 }
 
 type ApiResponse<T> = {
@@ -100,41 +108,11 @@ function numerasDePagina(atual: number, total: number): (number | "…")[] {
   return pages
 }
 
-function normalizeCpf(value: string): string {
-  return value.replace(/\D/g, "").slice(0, 11)
-}
-
-function formatCpf(value: string): string {
-  const digits = normalizeCpf(value)
-  if (!digits) return ""
-  if (digits.length <= 3) return digits
-  if (digits.length <= 6) return `${digits.slice(0, 3)}.${digits.slice(3)}`
-  if (digits.length <= 9) return `${digits.slice(0, 3)}.${digits.slice(3, 6)}.${digits.slice(6)}`
-  return `${digits.slice(0, 3)}.${digits.slice(3, 6)}.${digits.slice(6, 9)}-${digits.slice(9)}`
-}
-
-function normalizePhone(value: string): string {
-  return value.replace(/\D/g, "").slice(0, 11)
-}
-
-function formatPhone(value: string): string {
-  const digits = normalizePhone(value)
-  if (!digits) return ""
-  if (digits.length <= 2) return `(${digits}`
-  if (digits.length <= 6) return `(${digits.slice(0, 2)}) ${digits.slice(2)}`
-  if (digits.length <= 10) return `(${digits.slice(0, 2)}) ${digits.slice(2, 6)}-${digits.slice(6)}`
-  return `(${digits.slice(0, 2)}) ${digits.slice(2, 7)}-${digits.slice(7)}`
-}
-
-function isValidEmail(value: string): boolean {
-  const trimmed = value.trim()
-  if (!trimmed) return true
-  return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(trimmed)
-}
-
 export function AlunosClient() {
   const [alunos, setAlunos] = useState<Aluno[]>([])
+  const [planos, setPlanos] = useState<Plano[]>([])
   const [busca, setBusca] = useState("")
+  const [buscaDigitada, setBuscaDigitada] = useState("")
   const [filtroStatus, setFiltroStatus] = useState<(typeof STATUS_OPTIONS)[number]>("Todos")
   const [pagina, setPagina] = useState(1)
   const [sheetAberto, setSheetAberto] = useState(false)
@@ -145,24 +123,37 @@ export function AlunosClient() {
   const [carregando, setCarregando] = useState(true)
   const [erro, setErro] = useState<string | null>(null)
   const [planos, setPlanos] = useState<Plano[]>([])
+  const [apiError, setApiError] = useState<ApiErrorInfo | null>(null)
 
   const carregarAlunos = useCallback(async () => {
     try {
       setErro(null)
+      setApiError(null)
       setCarregando(true)
       const response = await api.get<ApiResponse<Aluno[]>>("/api/students")
       setAlunos(Array.isArray(response.data?.data) ? response.data.data : [])
     } catch (err) {
       console.error("Erro ao carregar alunos", err)
-      setErro("Nao foi possivel carregar os alunos.")
+      const info = getApiErrorInfo(err)
+      setApiError(info ?? { status: 500, message: "Nao foi possivel carregar os alunos." })
     } finally {
       setCarregando(false)
     }
   }, [])
 
+  const carregarPlanos = useCallback(async () => {
+    try {
+      const response = await api.get<ApiResponse<Plano[]>>("/api/plans")
+      setPlanos(Array.isArray(response.data?.data) ? response.data.data : [])
+    } catch (err) {
+      console.error("Erro ao carregar planos", err)
+    }
+  }, [])
+
   useEffect(() => {
     void carregarAlunos()
-  }, [carregarAlunos])
+    void carregarPlanos()
+  }, [carregarAlunos, carregarPlanos])
 
   useEffect(() => {
     api.get<ApiResponse<Plano[]>>("/api/plans")
@@ -215,6 +206,10 @@ export function AlunosClient() {
   const emailInvalido = form.email.trim() !== "" && !emailValido
 
   function mudarFiltro(fn: () => void) { fn(); setPagina(1) }
+  function aplicarBusca() {
+    mudarFiltro(() => setBusca(buscaDigitada.trim()))
+    void carregarAlunos()
+  }
 
   function abrirCriar() {
     setModo("criar"); setForm(FORM_VAZIO); setEditando(null); setSheetAberto(true)
@@ -247,7 +242,7 @@ export function AlunosClient() {
 
       const planIdValue = form.planId.trim()
       if (planIdValue && !/^\d+$/.test(planIdValue)) {
-        setErro("Plan ID invalido.")
+        setErro("Plano invalido.")
         return
       }
 
@@ -279,7 +274,9 @@ export function AlunosClient() {
       setSheetAberto(false)
     } catch (err) {
       console.error("Erro ao salvar aluno", err)
-      setErro("Nao foi possivel salvar o aluno.")
+      const info = getApiErrorInfo(err)
+      const { description, detail } = resolveApiErrorContent(info)
+      setErro(detail ?? description)
     }
   }
 
@@ -290,7 +287,9 @@ export function AlunosClient() {
       setErro(null)
     } catch (err) {
       console.error("Erro ao excluir aluno", err)
-      setErro("Nao foi possivel excluir o aluno.")
+      const info = getApiErrorInfo(err)
+      const { description, detail } = resolveApiErrorContent(info)
+      setErro(detail ?? description)
     } finally {
       setDeletandoId(null)
     }
@@ -328,7 +327,11 @@ export function AlunosClient() {
         </header>
 
         <main className="flex-1 space-y-5 p-4 sm:space-y-6 sm:p-6">
-
+          <ApiErrorScreen
+            error={apiError}
+            onRetry={carregarAlunos}
+            onClose={() => setApiError(null)}
+          />
           {/* KPI Cards */}
           <div className="grid grid-cols-2 gap-4 xl:grid-cols-4">
             {[
@@ -375,8 +378,24 @@ export function AlunosClient() {
                       value={busca}
                       onChange={e => mudarFiltro(() => setBusca(e.target.value))}
                       className="h-8 w-full border-zinc-300 bg-white pl-8 text-xs text-zinc-900 placeholder:text-zinc-400 focus-visible:border-[#DD050A]/50 sm:w-44 dark:border-[#FFFFFF]/15 dark:bg-[#000000] dark:text-[#FFFFFF] dark:placeholder:text-[#FFFFFF]/35"
+                      value={buscaDigitada}
+                      onChange={e => setBuscaDigitada(e.target.value)}
+                      onKeyDown={e => {
+                        if (e.key === "Enter") {
+                          e.preventDefault()
+                          aplicarBusca()
+                        }
+                      }}
+                      className="h-8 w-full border-[#FFFFFF]/15 bg-[#000000] pl-8 text-xs text-[#FFFFFF] placeholder:text-[#FFFFFF]/35 focus-visible:border-[#DD050A]/50 sm:w-44"
                     />
                   </div>
+                  <button
+                    type="button"
+                    onClick={aplicarBusca}
+                    className="h-8 rounded-md border border-[#DD050A]/40 bg-[#DD050A]/15 px-3 text-xs font-medium text-[#FFFFFF] transition-colors hover:border-[#DD050A]/70 hover:bg-[#DD050A]/25"
+                  >
+                    Pesquisar
+                  </button>
                   <select
                     value={filtroStatus}
                     onChange={e => mudarFiltro(() => setFiltroStatus(e.target.value as (typeof STATUS_OPTIONS)[number]))}
@@ -659,6 +678,21 @@ export function AlunosClient() {
                     ))}
                   </select>
                 </div>
+              <div className="flex flex-col gap-1.5">
+                <Label htmlFor="plano" className={labelClass}>Plano</Label>
+                <select
+                  id="plano"
+                  value={form.planId}
+                  onChange={e => setForm(f => ({ ...f, planId: e.target.value }))}
+                  className={FORM_SELECT_CLASS}
+                >
+                  <option value="">Sem plano</option>
+                  {planos.map(plano => (
+                    <option key={plano.id} value={plano.id}>
+                      {plano.name}
+                    </option>
+                  ))}
+                </select>
               </div>
 
               <div className="flex flex-col gap-1.5">

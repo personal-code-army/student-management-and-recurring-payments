@@ -1,48 +1,28 @@
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { Badge } from "@/components/ui/badge";
 import { SidebarProvider, SidebarTrigger } from "@/components/ui/sidebar";
 import { AppSidebar } from "@/components/app-sidebar";
 import { Check, CircleDollarSign } from "lucide-react";
+import { Separator } from "@/components/ui/separator";
+import { CircleDollarSign } from "lucide-react";
 
 const planos = [
 	{
 		id: 1,
-		nome: "Basico",
+		nome: "Plano Mensal",
 		preco: "R$ 150,00",
-		periodo: "por mes",
-		destaque: "Mais escolhido",
-		beneficios: [
-			"2 modalidades liberadas",
-			"Aulas em horarios fixos",
-			"Acesso ao tatame",
-		],
+		periodo: "por mês",
 	},
 	{
 		id: 2,
-		nome: "Intermediario",
-		preco: "R$ 400,00",
-		periodo: "a cada 3 meses",
-		destaque: "Melhor equilibrio",
-		beneficios: [
-			"3 modalidades liberadas",
-			"Treinos livres aos sabados",
-			"Acesso ao tatame",
-			"Desconto no pacote",
-		],
+		nome: "Plano Trimestral",
+		preco: "R$ 100,00",
+		periodo: "por mês",
 	},
 	{
 		id: 3,
-		nome: "Premium",
-		preco: "R$ 1.400,00",
-		periodo: "por ano",
-		destaque: "Maximo desempenho",
-		beneficios: [
-			"Todas as modalidades liberadas",
-			"Treinos livres todos os dias",
-			"Acesso ao tatame",
-			"Avaliacao fisica trimestral",
-			"Acompanhamento tecnico",
-		],
+		nome: "Plano Semestral",
+		preco: "R$ 75,00",
+		periodo: "por mês",
 	},
 ];
 
@@ -70,7 +50,7 @@ export default function PlanosPage() {
 							{planos.map((plano) => (
 								<Card
 									key={plano.id}
-									className="group relative overflow-hidden border-[#FFFFFF]/12 bg-[#020203] transition-all duration-300 hover:border-[#DD050A]/50 hover:-translate-y-1 hover:shadow-lg hover:shadow-[#DD050A]/10 min-h-[560px]"
+									className="group relative overflow-hidden border-[#FFFFFF]/12 bg-[#020203] transition-all duration-300 hover:border-[#DD050A]/50 hover:-translate-y-1 hover:shadow-lg hover:shadow-[#DD050A]/10 min-h-[320px]"
 								>
 									<div className="pointer-events-none absolute inset-0 opacity-0 transition-opacity duration-300 group-hover:opacity-100">
 										<div className="absolute -top-24 left-1/2 h-48 w-48 -translate-x-1/2 rounded-full bg-[#DD050A]/12 blur-3xl" />
@@ -79,9 +59,6 @@ export default function PlanosPage() {
 									<CardHeader className="pb-3 pt-6 px-6">
 										<div className="flex items-center justify-between">
 											<CardTitle className="text-lg text-[#FFFFFF]">{plano.nome}</CardTitle>
-											<Badge variant="outline" className="bg-[#DD050A]/15 text-[#DD050A] border-[#DD050A]/40">
-												{plano.destaque}
-											</Badge>
 										</div>
 										<CardDescription className="text-[#FFFFFF]/60 text-sm">Planos para evoluir na academia de lutas</CardDescription>
 									</CardHeader>
@@ -96,20 +73,6 @@ export default function PlanosPage() {
 												</p>
 												<p className="text-xs text-[#FFFFFF]/50 uppercase tracking-wider">{plano.periodo}</p>
 											</div>
-										</div>
-
-										<div className="space-y-2">
-											<p className="text-xs text-[#FFFFFF]/50 uppercase tracking-wider">O que inclui</p>
-											<ul className="space-y-2">
-												{plano.beneficios.map((beneficio) => (
-													<li key={beneficio} className="flex items-start gap-2 text-sm text-[#FFFFFF]/70">
-														<span className="flex h-5 w-5 items-center justify-center rounded-full bg-[#DD050A]/12">
-															<Check className="h-3 w-3 text-[#DD050A]" />
-														</span>
-														<span>{beneficio}</span>
-													</li>
-												))}
-											</ul>
 										</div>
 									</CardContent>
 								</Card>
