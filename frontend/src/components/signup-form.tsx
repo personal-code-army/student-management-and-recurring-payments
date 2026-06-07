@@ -107,7 +107,7 @@ export function SignupForm({ onSwitchTab, ...props }: SignupFormProps) {
                   id="name"
                   name="name"
                   type="text"
-                  placeholder="Felipe Figueiredo Mascarenhas"
+                  placeholder="Nome Completo"
                   autoComplete="name"
                   required
                   value={name}
@@ -120,7 +120,7 @@ export function SignupForm({ onSwitchTab, ...props }: SignupFormProps) {
                   id="email"
                   name="email"
                   type="email"
-                  placeholder="felipe@gmail.com"
+                  placeholder="nome@email.com"
                   autoComplete="email"
                   required
                   value={email}

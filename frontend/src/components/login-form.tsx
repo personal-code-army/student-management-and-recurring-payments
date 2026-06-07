@@ -99,7 +99,7 @@ export function LoginForm({ className, onSwitchTab, ...props }: LoginFormProps) 
                   id="email"
                   name="email"
                   type="email"
-                  placeholder="felipe@gmail.com"
+                  placeholder="nome@email.com"
                   autoComplete="email"
                   required
                   value={email}
