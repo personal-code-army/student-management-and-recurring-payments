@@ -21,38 +21,9 @@ export default function RootLayout({
     <html lang="pt-BR" suppressHydrationWarning>
       <body className={geist.className}>
         <ThemeProvider>
-          {children}
+          <AuthGuard>{children}</AuthGuard>
         </ThemeProvider>
       </body>
     </html>
   );
 }
-
-
-
-
-{/*import type { Metadata } from "next";
-import { Geist } from "next/font/google";
-import "./globals.css";
-
-
-const geist = Geist({ subsets: ["latin"] });
-
-export const metadata: Metadata = {
-  title: "Controle de Alunos e Pagamentos ",
-  description: "Painel de controle Gelo Team Chakuriki",
-};
-
-export default function RootLayout({
-  children,
-}: {
-  children: React.ReactNode;
-}) {
-  return (
-    <html lang="pt-BR">
-      <body className={geist.className}>
-        <AuthGuard>{children}</AuthGuard>
-      </body>
-    </html>
-  );
-} */}

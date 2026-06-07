@@ -21,12 +21,9 @@ import {
   Phone, Pencil, Trash2, ChevronLeft, ChevronRight, Search,
 } from "lucide-react"
 import { api } from "@/lib/api"
-<<<<<<< HEAD
 import { formatCpf, formatPhone, isValidEmail, normalizeCpf, normalizePhone } from "@/lib/validators"
-=======
 import { ApiErrorScreen } from "@/components/api-error-screen"
 import { type ApiErrorInfo, getApiErrorInfo, resolveApiErrorContent } from "@/lib/api-errors"
->>>>>>> b3457b8 (feat: Adicionar tratamento de erros de API e melhorar a experiência do usuário com mensagens de erro)
 
 interface Aluno {
   id: number
