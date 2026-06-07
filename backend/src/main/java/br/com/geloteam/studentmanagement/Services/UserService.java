@@ -7,8 +7,9 @@ import br.com.geloteam.studentmanagement.Models.User;
 import br.com.geloteam.studentmanagement.Repositories.UserRepository;
 import br.com.geloteam.studentmanagement.exception.EntityNotFound;
 import jakarta.transaction.Transactional;
-import org.springframework.security.core.userdetails.UsernameNotFoundException;
+import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
+import org.springframework.web.server.ResponseStatusException;
 
 import java.util.List;
 
@@ -24,17 +25,29 @@ public class UserService {
     }
 
     public List<RegisterResponseDTO> findAllUsers() {
-        List<User> users = userRepository.findAll();
-
-        return users.stream()
+        return userRepository.findAll()
+                .stream()
                 .map(RegisterResponseDTO::new)
                 .toList();
+    }
+
+    public RegisterResponseDTO findById(Long id) {
+        User user = userRepository.findById(id).orElseThrow(
+                () -> new EntityNotFound("Usuário não encontrado"));
+        return new RegisterResponseDTO(user);
     }
 
     @Transactional
     public RegisterResponseDTO update(Long id, UpdateUserDTO data) {
         User user = userRepository.findById(id).orElseThrow(
-                () -> new EntityNotFound("Usuario não encontrado"));
+                () -> new EntityNotFound("Usuário não encontrado"));
+
+        if (data.email() != null && !data.email().isBlank() && !data.email().equals(user.getEmail())) {
+            userRepository.findByEmail(data.email()).ifPresent(existing -> {
+                throw new ResponseStatusException(HttpStatus.CONFLICT, "E-mail já está em uso");
+            });
+            user.setEmail(data.email());
+        }
 
         user.setName(data.name());
         user.setCellphoneNumber(data.cellphoneNumber());
@@ -42,13 +55,13 @@ public class UserService {
         Company company = companyService.findById(data.companyId());
         user.setCompany(company);
 
-        User savedUser = userRepository.save(user);
-        return new RegisterResponseDTO(savedUser);
+        return new RegisterResponseDTO(userRepository.save(user));
     }
 
     @Transactional
     public RegisterResponseDTO delete(Long id) {
-        User user = userRepository.findById(id).orElseThrow();
+        User user = userRepository.findById(id).orElseThrow(
+                () -> new EntityNotFound("Usuário não encontrado"));
         userRepository.delete(user);
         return new RegisterResponseDTO(user);
     }

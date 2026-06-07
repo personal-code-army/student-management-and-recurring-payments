@@ -43,11 +43,14 @@ public class AuthServiceTest {
     private AuthenticationManager authenticationManager;
     @Mock
     private PasswordEncoder passwordEncoder;
+    @Mock
+    private CpfEncryptionService cpfEncryptionService;
 
     @InjectMocks
     private AuthService authService;
 
     private final String EMAIL = "vitor@geloteam.com.br";
+    private final String VALID_CPF = "52998224725";
 
     @Test
     @DisplayName("Should return UserDetails when user exists")
@@ -112,37 +115,39 @@ public class AuthServiceTest {
     @Test
     @DisplayName("Should register user successfully")
     void registerSuccess() {
-        RegisterRequestDTO request = new RegisterRequestDTO("Vitor", "vitor@email.com", "senha123", "11999999999", 1L);
+        RegisterRequestDTO request = new RegisterRequestDTO("Vitor", "vitor@email.com", "Senha@123", VALID_CPF, "11999999999", 1L);
         Company mockCompany = new Company();
         mockCompany.setId(1L);
 
         when(userRepository.findUserByEmail(request.email())).thenReturn(Optional.empty());
         when(passwordEncoder.encode(anyString())).thenReturn("senha_criptografada");
+        when(cpfEncryptionService.encrypt(anyString())).thenReturn("cpf_criptografado");
         when(companyService.findById(1L)).thenReturn(mockCompany);
-
         when(userRepository.save(any(User.class))).thenAnswer(invocation -> invocation.getArgument(0));
 
         RegisterResponseDTO response = authService.register(request);
 
         assertNotNull(response);
-        verify(passwordEncoder).encode("senha123");
+        verify(passwordEncoder).encode("Senha@123");
+        verify(cpfEncryptionService).encrypt(VALID_CPF);
         verify(userRepository).save(argThat(user ->
                 user.getEmail().equals("vitor@email.com") &&
                         user.getRole() == UserRole.USER &&
-                        user.getPassword().equals("senha_criptografada")
+                        user.getPassword().equals("senha_criptografada") &&
+                        user.getCpf().equals("cpf_criptografado")
         ));
     }
 
     @Test
     @DisplayName("Should throw CONFLICT when email already exists")
     void registerFailEmailExists() {
-        RegisterRequestDTO request = new RegisterRequestDTO("Vitor", "vitor@email.com", "123", "11999999999", 1L);
+        RegisterRequestDTO request = new RegisterRequestDTO("Vitor", "vitor@email.com", "Senha@123", VALID_CPF, "11999999999", 1L);
         when(userRepository.findUserByEmail(request.email())).thenReturn(Optional.of(new User()));
 
         ResponseStatusException exception = assertThrows(ResponseStatusException.class, () -> authService.register(request));
 
         assertEquals(HttpStatus.CONFLICT, exception.getStatusCode());
-        assertEquals("E-mail already exists!", exception.getReason());
+        assertEquals("E-mail já cadastrado!", exception.getReason());
     }
 
     @Test
@@ -155,6 +160,7 @@ public class AuthServiceTest {
         User mockUser = new User();
         mockUser.setEmail("vitor@email.com");
         mockUser.setName("Vitor");
+        mockUser.setRole(UserRole.USER);
         mockUser.setCompany(mockCompany);
 
         Authentication authMock = mock(Authentication.class);

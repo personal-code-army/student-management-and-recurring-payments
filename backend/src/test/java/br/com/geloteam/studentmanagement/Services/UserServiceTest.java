@@ -4,14 +4,15 @@ import br.com.geloteam.studentmanagement.DTO.UpdateUserDTO;
 import br.com.geloteam.studentmanagement.DTO.auth.RegisterResponseDTO;
 import br.com.geloteam.studentmanagement.Models.Company;
 import br.com.geloteam.studentmanagement.Models.User;
+import br.com.geloteam.studentmanagement.Models.UserRole;
 import br.com.geloteam.studentmanagement.Repositories.UserRepository;
+import br.com.geloteam.studentmanagement.exception.EntityNotFound;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
-import org.springframework.security.core.userdetails.UsernameNotFoundException;
 
 import java.util.List;
 import java.util.Optional;
@@ -32,19 +33,23 @@ class UserServiceTest {
     @InjectMocks
     private UserService userService;
 
+    private User buildUser(Long id, String name, Long companyId) {
+        Company company = new Company();
+        company.setId(companyId);
+
+        User user = new User();
+        user.setId(id);
+        user.setName(name);
+        user.setRole(UserRole.USER);
+        user.setCompany(company);
+        return user;
+    }
+
     @Test
     @DisplayName("Should return all users mapped to DTOs")
     void findAllUsersShouldReturnDtoList() {
-        Company company = new Company();
-        company.setId(1L);
-
-        User user1 = new User();
-        user1.setName("Vitor");
-        user1.setCompany(company);
-
-        User user2 = new User();
-        user2.setName("John");
-        user2.setCompany(company);
+        User user1 = buildUser(1L, "Vitor", 1L);
+        User user2 = buildUser(2L, "John", 1L);
 
         when(userRepository.findAll()).thenReturn(List.of(user1, user2));
 
@@ -53,8 +58,31 @@ class UserServiceTest {
         assertNotNull(result);
         assertEquals(2, result.size());
         assertEquals(1L, result.getFirst().companyId());
+        assertEquals("USER", result.getFirst().role());
+        assertNotNull(result.getFirst().id());
 
         verify(userRepository, times(1)).findAll();
+    }
+
+    @Test
+    @DisplayName("Should return user by ID")
+    void findByIdShouldReturnUserDto() {
+        User user = buildUser(1L, "Vitor", 1L);
+        when(userRepository.findById(1L)).thenReturn(Optional.of(user));
+
+        RegisterResponseDTO result = userService.findById(1L);
+
+        assertNotNull(result);
+        assertEquals(1L, result.id());
+        assertEquals("Vitor", result.name());
+        assertEquals("USER", result.role());
+    }
+
+    @Test
+    @DisplayName("Should throw EntityNotFound when user ID does not exist")
+    void findByIdShouldThrowWhenNotFound() {
+        when(userRepository.findById(99L)).thenReturn(Optional.empty());
+        assertThrows(EntityNotFound.class, () -> userService.findById(99L));
     }
 
     @Test
@@ -62,11 +90,9 @@ class UserServiceTest {
     void updateShouldReturnUpdatedUserDtoWhenIdExists() {
         Long userId = 1L;
         Long companyId = 10L;
-        UpdateUserDTO dto = new UpdateUserDTO("Vitor Gonzalez", "11999999999", companyId);
+        UpdateUserDTO dto = new UpdateUserDTO("Vitor Gonzalez", null, "11999999999", companyId);
 
-        User existingUser = new User();
-        existingUser.setId(userId);
-
+        User existingUser = buildUser(userId, "Vitor", companyId);
         Company company = new Company();
         company.setId(companyId);
 
@@ -83,13 +109,13 @@ class UserServiceTest {
     }
 
     @Test
-    @DisplayName("Should throw UsernameNotFoundException when updating non-existent user")
+    @DisplayName("Should throw EntityNotFound when updating non-existent user")
     void updateShouldThrowExceptionWhenUserNotFound() {
         Long userId = 1L;
-        UpdateUserDTO dto = new UpdateUserDTO("Name", "123", 10L);
+        UpdateUserDTO dto = new UpdateUserDTO("Name", null, "123", 10L);
         when(userRepository.findById(userId)).thenReturn(Optional.empty());
 
-        assertThrows(UsernameNotFoundException.class, () -> userService.update(userId, dto));
+        assertThrows(EntityNotFound.class, () -> userService.update(userId, dto));
         verify(userRepository, never()).save(any());
         verify(companyService, never()).findById(any());
     }
@@ -97,13 +123,7 @@ class UserServiceTest {
     @Test
     @DisplayName("Should delete user and return DTO when ID exists")
     void deleteShouldRemoveUserAndReturnDto() {
-        Company company = new Company();
-        company.setId(10L);
-
-        User user = new User();
-        user.setId(1L);
-        user.setName("Vitor");
-        user.setCompany(company);
+        User user = buildUser(1L, "Vitor", 10L);
 
         when(userRepository.findById(1L)).thenReturn(Optional.of(user));
 
