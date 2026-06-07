@@ -92,7 +92,7 @@ public class PaymentUseCaseImpl implements SavePaymentUseCase, UpdatePaymentUseC
         payment.setDescription("Assinatura | " + plan.getName());
         payment.setValue(plan.getMonthlyAmount());
         payment.setPaymentMethod(subscription.getPaymentMethod());
-        payment.setDueDate(LocalDate.now());
+        payment.setDueDate(LocalDate.now().plusMonths(plan.getFrequency()));
         payment.setIssueDate(null);
         payment.setStatus("A receber");
         payment.setSubscriptionId(subscription.getId());
