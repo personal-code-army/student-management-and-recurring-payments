@@ -5,12 +5,14 @@ import br.com.geloteam.studentmanagement.domain.user.entity.User;
 import br.com.geloteam.studentmanagement.domain.user.port.out.CompanyRepositoryPort;
 import br.com.geloteam.studentmanagement.domain.user.port.out.UserRepositoryPort;
 import br.com.geloteam.studentmanagement.shared.exception.NotFoundException;
+import br.com.geloteam.studentmanagement.shared.exception.UnauthorizedException;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
+import org.springframework.security.crypto.password.PasswordEncoder;
 
 import java.util.List;
 import java.util.Optional;
@@ -27,6 +29,9 @@ class UserUseCaseImplTest {
 
     @Mock
     private CompanyRepositoryPort companyRepository;
+
+    @Mock
+    private PasswordEncoder passwordEncoder;
 
     @InjectMocks
     private UserUseCaseImpl userUseCaseImpl;
@@ -65,6 +70,27 @@ class UserUseCaseImplTest {
     }
 
     @Test
+    @DisplayName("Should return user by id")
+    void findByIdShouldReturnUser() {
+        User user = buildUser(1L, 1L);
+        when(userRepository.findById(1L)).thenReturn(Optional.of(user));
+
+        User result = userUseCaseImpl.findById(1L);
+
+        assertNotNull(result);
+        assertEquals(1L, result.getId());
+        verify(userRepository).findById(1L);
+    }
+
+    @Test
+    @DisplayName("Should throw NotFoundException when user not found by id")
+    void findByIdShouldThrowNotFound() {
+        when(userRepository.findById(99L)).thenReturn(Optional.empty());
+
+        assertThrows(NotFoundException.class, () -> userUseCaseImpl.findById(99L));
+    }
+
+    @Test
     @DisplayName("Should update user successfully when ID exists")
     void updateShouldSucceedWhenUserExists() {
         Long userId = 1L;
@@ -76,7 +102,7 @@ class UserUseCaseImplTest {
         when(companyRepository.findById(companyId)).thenReturn(Optional.of(company));
         when(userRepository.save(any(User.class))).thenAnswer(inv -> inv.getArgument(0));
 
-        User result = userUseCaseImpl.execute(userId, "Vitor Gonzalez", "11999999999", companyId);
+        User result = userUseCaseImpl.execute(userId, "Vitor Gonzalez", null, "11999999999", companyId);
 
         assertNotNull(result);
         assertEquals("Vitor Gonzalez", result.getName());
@@ -91,7 +117,7 @@ class UserUseCaseImplTest {
         when(userRepository.findById(99L)).thenReturn(Optional.empty());
 
         assertThrows(NotFoundException.class,
-                () -> userUseCaseImpl.execute(99L, "Name", "123", 10L));
+                () -> userUseCaseImpl.execute(99L, "Name", null, "123", 10L));
 
         verify(userRepository, never()).save(any());
         verify(companyRepository, never()).findById(any());
@@ -119,5 +145,35 @@ class UserUseCaseImplTest {
 
         assertThrows(NotFoundException.class, () -> userUseCaseImpl.execute(99L));
         verify(userRepository, never()).delete(any());
+    }
+
+    @Test
+    @DisplayName("Should change password successfully")
+    void changePasswordShouldSucceed() {
+        User user = buildUser(1L, 1L);
+        user.setPassword("encoded_old");
+
+        when(userRepository.findByEmail("vitor@email.com")).thenReturn(Optional.of(user));
+        when(passwordEncoder.matches("oldPass", "encoded_old")).thenReturn(true);
+        when(passwordEncoder.encode("newPass@123")).thenReturn("encoded_new");
+        when(userRepository.save(any())).thenAnswer(inv -> inv.getArgument(0));
+
+        assertDoesNotThrow(() -> userUseCaseImpl.execute("vitor@email.com", "oldPass", "newPass@123"));
+        verify(passwordEncoder).encode("newPass@123");
+        verify(userRepository).save(argThat(u -> u.getPassword().equals("encoded_new")));
+    }
+
+    @Test
+    @DisplayName("Should throw UnauthorizedException when current password is wrong")
+    void changePasswordShouldFailOnWrongCurrentPassword() {
+        User user = buildUser(1L, 1L);
+        user.setPassword("encoded_old");
+
+        when(userRepository.findByEmail("vitor@email.com")).thenReturn(Optional.of(user));
+        when(passwordEncoder.matches("wrongPass", "encoded_old")).thenReturn(false);
+
+        assertThrows(UnauthorizedException.class,
+                () -> userUseCaseImpl.execute("vitor@email.com", "wrongPass", "newPass@123"));
+        verify(userRepository, never()).save(any());
     }
 }

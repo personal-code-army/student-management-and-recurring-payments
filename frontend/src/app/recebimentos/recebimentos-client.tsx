@@ -27,6 +27,10 @@ import {
   paymentService, subscriptionService,
   type Payment, type PaymentRequest, type Subscription,
 } from "./payment.service"
+import { api } from "@/lib/api"
+
+interface StudentLite { id: number; name: string }
+interface PlanLite    { id: number; name: string }
 
 // ─── Types ───────────────────────────────────────────────────────────────────
 
@@ -57,9 +61,9 @@ const FORM_VAZIO: FormState = {
 }
 
 const STATUS_STYLE: Record<string, string> = {
-  "Pago":      "border-[#00FF00]/30 bg-[#00FF00]/10 text-[#00FF00]",
-  "A receber": "border-[#F59E0B]/30 bg-[#F59E0B]/10 text-[#F59E0B]",
-  "Vencido":   "border-[#DD050A]/30 bg-[#DD050A]/10 text-[#DD050A]",
+  "Pago":      "border-green-500/30 bg-green-500/10 text-green-600 dark:border-[#00FF00]/30 dark:bg-[#00FF00]/10 dark:text-[#00FF00]",
+  "A receber": "border-amber-500/30 bg-amber-500/10 text-amber-600 dark:border-[#F59E0B]/30 dark:bg-[#F59E0B]/10 dark:text-[#F59E0B]",
+  "Vencido":   "border-red-500/30 bg-red-500/10 text-red-600 dark:border-[#DD050A]/30 dark:bg-[#DD050A]/10 dark:text-[#DD050A]",
 }
 
 const STATUS_ICON: Record<string, React.ReactNode> = {
@@ -69,10 +73,10 @@ const STATUS_ICON: Record<string, React.ReactNode> = {
 }
 
 const SELECT_CLASS =
-  "h-8 rounded-md border border-[#FFFFFF]/15 bg-[#000000] px-2.5 text-xs text-[#FFFFFF] focus:border-[#DD050A]/50 focus:outline-none"
+  "h-8 rounded-md border border-zinc-300 bg-white px-2.5 text-xs text-zinc-900 focus:border-[#DD050A]/50 focus:outline-none dark:border-[#FFFFFF]/15 dark:bg-[#000000] dark:text-[#FFFFFF]"
 
 const FORM_SELECT_CLASS =
-  "h-9 w-full rounded-md border border-[#FFFFFF]/15 bg-[#000000] px-3 text-sm text-[#FFFFFF] focus:border-[#DD050A]/50 focus:outline-none disabled:opacity-50"
+  "h-9 w-full rounded-md border border-zinc-300 bg-white px-3 text-sm text-zinc-900 focus:border-[#DD050A]/50 focus:outline-none disabled:opacity-50 dark:border-[#FFFFFF]/15 dark:bg-[#000000] dark:text-[#FFFFFF]"
 
 // ─── Helpers ─────────────────────────────────────────────────────────────────
 
@@ -134,6 +138,8 @@ function formToRequest(form: FormState): PaymentRequest {
 export function RecebimentosClient() {
   const [payments, setPayments]             = useState<Payment[]>([])
   const [subscriptions, setSubscriptions]   = useState<Subscription[]>([])
+  const [students, setStudents]             = useState<StudentLite[]>([])
+  const [plans, setPlans]                   = useState<PlanLite[]>([])
   const [busca, setBusca]                   = useState("")
   const [filtroStatus, setFiltroStatus]     = useState<(typeof STATUS_OPTIONS)[number]>("Todos")
   const [pagina, setPagina]                 = useState(1)
@@ -168,19 +174,28 @@ export function RecebimentosClient() {
   // ── Fetch subscriptions ao abrir sheet de criação ──────────────────────────
 
   const carregarSubscriptions = useCallback(async () => {
-    // Só busca se ainda não carregou
     if (subscriptions.length > 0) return
     try {
       setCarregandoSubs(true)
-      const data = await subscriptionService.findAllActive()
-      setSubscriptions(data)
+      const [subs, stuRes, planRes] = await Promise.all([
+        subscriptionService.findAllActive(),
+        api.get<{ data: StudentLite[] }>("/api/students"),
+        api.get<{ data: PlanLite[] }>("/api/plans"),
+      ])
+      setSubscriptions(subs)
+      setStudents(Array.isArray(stuRes.data?.data) ? stuRes.data.data : [])
+      setPlans(Array.isArray(planRes.data?.data) ? planRes.data.data : [])
     } catch (err) {
       console.error("Erro ao carregar assinaturas", err)
-      // Não bloqueia o form, apenas o select ficará vazio
     } finally {
       setCarregandoSubs(false)
     }
   }, [subscriptions.length])
+
+  // ── Lookup maps para o select de assinatura ───────────────────────────────
+
+  const studentById = useMemo(() => new Map(students.map(s => [s.id, s.name])), [students])
+  const planById    = useMemo(() => new Map(plans.map(p => [p.id, p.name])), [plans])
 
   // ── Derived state ──────────────────────────────────────────────────────────
 
@@ -206,13 +221,15 @@ export function RecebimentosClient() {
 
   const totalAReceber    = payments.filter(p => p.status === "A receber").reduce((a, p) => a + p.value, 0)
   const totalAtrasados   = payments.filter(p => p.status === "Vencido").reduce((a, p) => a + p.value, 0)
-  const totalRecebidoMes = useMemo(() => {
-    const now = new Date()
-    const currentYYYYMM = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, "0")}`
-    return payments
-      .filter(p => p.status === "Pago" && p.issueDate?.slice(0, 7) === currentYYYYMM)
-      .reduce((a, p) => a + p.value, 0)
-  }, [payments])
+  const pagosDoMes = useMemo(
+    () => payments.filter(p => p.status === "Pago"),
+    [payments]
+  )
+
+  const totalRecebidoMes = useMemo(
+    () => pagosDoMes.reduce((a, p) => a + p.value, 0),
+    [pagosDoMes]
+  )
 
   function mudarFiltro(fn: () => void) { fn(); setPagina(1) }
 
@@ -246,7 +263,10 @@ export function RecebimentosClient() {
 
   async function salvar() {
     if (!form.description.trim() || !form.value || !form.dueDate) return
-    // Criação exige assinatura válida para não violar FK
+    if (!form.paymentMethod) {
+      setErro("Selecione o método de pagamento.")
+      return
+    }
     if (modo === "criar" && !form.subscriptionId) {
       setErro("Selecione uma assinatura ativa para vincular o recebimento.")
       return
@@ -296,14 +316,15 @@ export function RecebimentosClient() {
 
   // ── Styles ─────────────────────────────────────────────────────────────────
 
-  const labelClass = "text-xs font-medium text-[#FFFFFF]/80"
+  const labelClass = "text-xs font-medium text-zinc-600 dark:text-[#FFFFFF]/80"
   const inputClass =
-    "border-[#FFFFFF]/15 bg-[#000000] text-[#FFFFFF] placeholder:text-[#FFFFFF]/30 focus-visible:border-[#DD050A]/50"
+    "border-zinc-300 bg-white text-zinc-900 placeholder:text-zinc-400 focus-visible:border-[#DD050A]/50 dark:border-[#FFFFFF]/15 dark:bg-[#000000] dark:text-[#FFFFFF] dark:placeholder:text-[#FFFFFF]/30"
 
   const canSave =
     form.description.trim() !== "" &&
     form.value !== "" &&
     form.dueDate !== "" &&
+    form.paymentMethod !== "" &&
     (modo === "editar" || form.subscriptionId !== "") &&
     !salvando
 
@@ -312,21 +333,21 @@ export function RecebimentosClient() {
   return (
     <SidebarProvider>
       <AppSidebar />
-      <div className="flex min-h-screen flex-1 flex-col bg-[#000000] text-[#FFFFFF]">
+      <div className="flex min-h-screen flex-1 flex-col bg-zinc-50 text-zinc-900 dark:bg-[#000000] dark:text-[#FFFFFF]">
 
         {/* ── Header ── */}
-        <header className="sticky top-0 z-10 flex items-center justify-between gap-3 border-b border-[#FFFFFF]/10 bg-[#020203]/90 px-4 py-3 backdrop-blur sm:px-6 sm:py-4">
+        <header className="sticky top-0 z-10 flex items-center justify-between gap-3 border-b border-zinc-200 bg-white/90 px-4 py-3 backdrop-blur sm:px-6 sm:py-4 dark:border-[#FFFFFF]/10 dark:bg-[#020203]/90">
           <div className="flex items-center gap-3">
-            <SidebarTrigger className="text-[#FFFFFF]/70 hover:text-[#FFFFFF] md:hidden" />
-            <Separator orientation="vertical" className="h-5 bg-[#FFFFFF]/20 md:hidden" />
+            <SidebarTrigger className="text-zinc-500 hover:text-zinc-900 md:hidden dark:text-[#FFFFFF]/70 dark:hover:text-[#FFFFFF]" />
+            <Separator orientation="vertical" className="h-5 bg-zinc-200 md:hidden dark:bg-[#FFFFFF]/20" />
             <div>
-              <h1 className="text-sm font-semibold leading-none text-[#FFFFFF]">Recebimentos</h1>
-              <p className="mt-0.5 text-xs text-[#FFFFFF]/60">Gerencie os pagamentos e cobranças</p>
+              <h1 className="text-sm font-semibold leading-none text-zinc-900 dark:text-[#FFFFFF]">Recebimentos</h1>
+              <p className="mt-0.5 text-xs text-zinc-500 dark:text-[#FFFFFF]/60">Gerencie os pagamentos e cobranças</p>
             </div>
           </div>
           <button
             onClick={abrirCriar}
-            className="flex items-center gap-2 rounded-lg border border-[#DD050A]/50 bg-[#DD050A]/15 px-3 py-2 text-xs font-medium text-[#FFFFFF] transition-colors hover:border-[#DD050A]/70 hover:bg-[#DD050A]/25"
+            className="flex items-center gap-2 rounded-lg border border-[#DD050A]/50 bg-[#DD050A]/15 px-3 py-2 text-xs font-medium text-[#DD050A] transition-colors hover:border-[#DD050A]/70 hover:bg-[#DD050A]/25 dark:text-[#FFFFFF]"
           >
             <Plus className="h-3.5 w-3.5" />
             <span className="hidden sm:inline">Novo Recebimento</span>
@@ -342,7 +363,7 @@ export function RecebimentosClient() {
                 label: "Total a Receber",
                 valor: formatarMoeda(totalAReceber),
                 sub: `${payments.filter(p => p.status === "A receber").length} cobranças pendentes`,
-                subClass: "text-[#FFFFFF]/60",
+                subClass: "text-zinc-500 dark:text-[#FFFFFF]/60",
                 icon: DollarSign,
                 accentColor: "group-hover:text-[#DD050A]",
                 accentBg: "group-hover:bg-[#DD050A]/12",
@@ -351,26 +372,26 @@ export function RecebimentosClient() {
                 label: "Atrasados",
                 valor: formatarMoeda(totalAtrasados),
                 sub: `${payments.filter(p => p.status === "Vencido").length} cobranças vencidas`,
-                subClass: "text-[#DD050A]",
+                subClass: "text-red-500 dark:text-[#DD050A]",
                 icon: TrendingDown,
                 accentColor: "text-[#DD050A]",
                 accentBg: "bg-[#DD050A]/12",
-                valorClass: "text-[#DD050A]",
+                valorClass: "text-red-500 dark:text-[#DD050A]",
               },
               {
-                label: "Recebido (Mês)",
+                label: "Total Recebido",
                 valor: formatarMoeda(totalRecebidoMes),
-                sub: `${payments.filter(p => p.status === "Pago").length} pagamentos confirmados`,
-                subClass: "text-[#00FF00]/80",
+                sub: `${pagosDoMes.length} pagamento${pagosDoMes.length !== 1 ? "s" : ""} confirmado${pagosDoMes.length !== 1 ? "s" : ""}`,
+                subClass: "text-green-600 dark:text-[#00FF00]/80",
                 icon: CheckCircle,
-                accentColor: "text-[#00AA00] group-hover:text-[#00CC44]",
-                accentBg: "group-hover:bg-[#00FF00]/12",
-                valorClass: "text-[#00CC44]",
+                accentColor: "text-green-600 group-hover:text-green-500 dark:text-[#00AA00] dark:group-hover:text-[#00CC44]",
+                accentBg: "group-hover:bg-green-500/12 dark:group-hover:bg-[#00FF00]/12",
+                valorClass: "text-green-600 dark:text-[#00CC44]",
               },
             ] as const).map(({ label, valor, sub, subClass, icon: Icon, accentColor, accentBg, valorClass }) => (
-              <Card key={label} className="group border-[#FFFFFF]/12 bg-[#020203] transition-colors hover:border-[#DD050A]/50">
+              <Card key={label} className="group border-zinc-200 bg-white transition-colors hover:border-[#DD050A]/50 dark:border-[#FFFFFF]/12 dark:bg-[#020203]">
                 <CardHeader className="flex flex-row items-center justify-between px-4 pb-2 pt-4 sm:px-5">
-                  <CardTitle className="text-xs font-medium uppercase tracking-wider text-[#FFFFFF]/65">
+                  <CardTitle className="text-xs font-medium uppercase tracking-wider text-zinc-500 dark:text-[#FFFFFF]/65">
                     {label}
                   </CardTitle>
                   <span className={`flex h-7 w-7 items-center justify-center rounded-md bg-[#FFFFFF]/10 transition-colors ${accentBg}`}>
@@ -378,7 +399,7 @@ export function RecebimentosClient() {
                   </span>
                 </CardHeader>
                 <CardContent className="px-4 pb-4 sm:px-5">
-                  <p className={`text-xl font-bold sm:text-2xl ${(valorClass as string | undefined) ?? "text-[#FFFFFF]"}`}>
+                  <p className={`text-xl font-bold sm:text-2xl ${(valorClass as string | undefined) ?? "text-zinc-900 dark:text-[#FFFFFF]"}`}>
                     {valor}
                   </p>
                   <p className={`mt-1 text-xs ${subClass}`}>{sub}</p>
@@ -388,28 +409,28 @@ export function RecebimentosClient() {
           </div>
 
           {/* ── Table Card ── */}
-          <Card className="border-[#FFFFFF]/12 bg-[#020203]">
+          <Card className="border-zinc-200 bg-white dark:border-[#FFFFFF]/12 dark:bg-[#020203]">
             <CardHeader className="px-4 pb-3 pt-5 sm:px-5">
               <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
                 <div>
-                  <CardTitle className="text-base text-[#FFFFFF]">Lista de Recebimentos</CardTitle>
-                  <CardDescription className="text-xs text-[#FFFFFF]/60">
+                  <CardTitle className="text-base text-zinc-900 dark:text-[#FFFFFF]">Lista de Recebimentos</CardTitle>
+                  <CardDescription className="text-xs text-zinc-500 dark:text-[#FFFFFF]/60">
                     {filtrados.length} recebimento{filtrados.length !== 1 ? "s" : ""} encontrado{filtrados.length !== 1 ? "s" : ""}
                   </CardDescription>
                 </div>
                 <div className="flex flex-wrap items-center gap-2">
                   <div className="relative">
-                    <Search className="absolute left-2.5 top-1/2 h-3.5 w-3.5 -translate-y-1/2 text-[#FFFFFF]/40" />
+                    <Search className="absolute left-2.5 top-1/2 h-3.5 w-3.5 -translate-y-1/2 text-zinc-400 dark:text-[#FFFFFF]/40" />
                     <Input
                       type="search"
                       placeholder="Buscar por descrição ou ID..."
                       value={busca}
                       onChange={e => mudarFiltro(() => setBusca(e.target.value))}
-                      className="h-8 w-full border-[#FFFFFF]/15 bg-[#000000] pl-8 text-xs text-[#FFFFFF] placeholder:text-[#FFFFFF]/35 focus-visible:border-[#DD050A]/50 sm:w-52"
+                      className="h-8 w-full border-zinc-300 bg-white pl-8 text-xs text-zinc-900 placeholder:text-zinc-400 focus-visible:border-[#DD050A]/50 sm:w-52 dark:border-[#FFFFFF]/15 dark:bg-[#000000] dark:text-[#FFFFFF] dark:placeholder:text-[#FFFFFF]/35"
                     />
                   </div>
                   <div className="flex items-center gap-1.5">
-                    <Filter className="h-3.5 w-3.5 text-[#FFFFFF]/40" />
+                    <Filter className="h-3.5 w-3.5 text-zinc-400 dark:text-[#FFFFFF]/40" />
                     <select
                       value={filtroStatus}
                       onChange={e => mudarFiltro(() => setFiltroStatus(e.target.value as (typeof STATUS_OPTIONS)[number]))}
@@ -435,15 +456,15 @@ export function RecebimentosClient() {
                   Lista de recebimentos com informações de valor, descrição, datas e status
                 </TableCaption>
                 <TableHeader>
-                  <TableRow className="border-[#FFFFFF]/10 hover:bg-transparent">
-                    <TableHead scope="col" className="w-16 text-xs uppercase text-[#FFFFFF]/60">ID</TableHead>
-                    <TableHead scope="col" className="text-xs uppercase text-[#FFFFFF]/60">Valor</TableHead>
-                    <TableHead scope="col" className="text-xs uppercase text-[#FFFFFF]/60">Descrição</TableHead>
-                    <TableHead scope="col" className="hidden text-xs uppercase text-[#FFFFFF]/60 sm:table-cell">Emissão</TableHead>
-                    <TableHead scope="col" className="hidden text-xs uppercase text-[#FFFFFF]/60 md:table-cell">Vencimento</TableHead>
-                    <TableHead scope="col" className="hidden text-xs uppercase text-[#FFFFFF]/60 lg:table-cell">Método</TableHead>
-                    <TableHead scope="col" className="text-xs uppercase text-[#FFFFFF]/60">Status</TableHead>
-                    <TableHead scope="col" className="text-right text-xs uppercase text-[#FFFFFF]/60">Ações</TableHead>
+                  <TableRow className="border-zinc-200 hover:bg-transparent dark:border-[#FFFFFF]/10">
+                    <TableHead scope="col" className="w-16 text-xs uppercase text-zinc-500 dark:text-[#FFFFFF]/60">ID</TableHead>
+                    <TableHead scope="col" className="text-xs uppercase text-zinc-500 dark:text-[#FFFFFF]/60">Valor</TableHead>
+                    <TableHead scope="col" className="text-xs uppercase text-zinc-500 dark:text-[#FFFFFF]/60">Descrição</TableHead>
+                    <TableHead scope="col" className="hidden text-xs uppercase text-zinc-500 sm:table-cell dark:text-[#FFFFFF]/60">Emissão</TableHead>
+                    <TableHead scope="col" className="hidden text-xs uppercase text-zinc-500 md:table-cell dark:text-[#FFFFFF]/60">Vencimento</TableHead>
+                    <TableHead scope="col" className="hidden text-xs uppercase text-zinc-500 lg:table-cell dark:text-[#FFFFFF]/60">Método</TableHead>
+                    <TableHead scope="col" className="text-xs uppercase text-zinc-500 dark:text-[#FFFFFF]/60">Status</TableHead>
+                    <TableHead scope="col" className="text-right text-xs uppercase text-zinc-500 dark:text-[#FFFFFF]/60">Ações</TableHead>
                   </TableRow>
                 </TableHeader>
 
@@ -466,22 +487,22 @@ export function RecebimentosClient() {
                     </TableRow>
                   ) : (
                     visiveis.map(payment => (
-                      <TableRow key={payment.id} className="border-[#FFFFFF]/8 transition-colors hover:bg-[#FFFFFF]/3">
-                        <TableCell className="font-mono text-xs text-[#FFFFFF]/50">#{payment.id}</TableCell>
-                        <TableCell className="font-semibold text-[#FFFFFF]">{formatarMoeda(payment.value)}</TableCell>
+                      <TableRow key={payment.id} className="border-zinc-100 transition-colors hover:bg-zinc-50 dark:border-[#FFFFFF]/8 dark:hover:bg-[#FFFFFF]/3">
+                        <TableCell className="font-mono text-xs text-zinc-400 dark:text-[#FFFFFF]/50">#{payment.id}</TableCell>
+                        <TableCell className="font-semibold text-zinc-900 dark:text-[#FFFFFF]">{formatarMoeda(payment.value)}</TableCell>
                         <TableCell>
-                          <span className="block max-w-[180px] truncate text-sm text-[#FFFFFF]/85" title={payment.description}>
+                          <span className="block max-w-[180px] truncate text-sm text-zinc-700 dark:text-[#FFFFFF]/85" title={payment.description}>
                             {payment.description}
                           </span>
                         </TableCell>
-                        <TableCell className="hidden text-xs text-[#FFFFFF]/65 sm:table-cell">
+                        <TableCell className="hidden text-xs text-zinc-500 sm:table-cell dark:text-[#FFFFFF]/65">
                           {formatarData(payment.issueDate)}
                         </TableCell>
-                        <TableCell className="hidden text-xs text-[#FFFFFF]/65 md:table-cell">
+                        <TableCell className="hidden text-xs text-zinc-500 md:table-cell dark:text-[#FFFFFF]/65">
                           {formatarData(payment.dueDate)}
                         </TableCell>
                         <TableCell className="hidden lg:table-cell">
-                          <span className="text-xs text-[#FFFFFF]/55">{payment.paymentMethod ?? "—"}</span>
+                          <span className="text-xs text-zinc-500 dark:text-[#FFFFFF]/55">{payment.paymentMethod ?? "—"}</span>
                         </TableCell>
                         <TableCell>
                           <Badge
@@ -499,7 +520,7 @@ export function RecebimentosClient() {
                             <button
                               onClick={() => abrirEditar(payment)}
                               aria-label="Editar recebimento"
-                              className="rounded-md p-1.5 text-[#FFFFFF]/40 transition-colors hover:bg-[#FFFFFF]/8 hover:text-[#FFFFFF]"
+                              className="rounded-md p-1.5 text-zinc-400 transition-colors hover:bg-zinc-100 hover:text-zinc-700 dark:text-[#FFFFFF]/40 dark:hover:bg-[#FFFFFF]/8 dark:hover:text-[#FFFFFF]"
                             >
                               <Pencil className="h-3.5 w-3.5" />
                             </button>
@@ -513,7 +534,7 @@ export function RecebimentosClient() {
                                 </button>
                                 <button
                                   onClick={() => setDeletandoId(null)}
-                                  className="rounded-md px-2 py-1 text-[10px] text-[#FFFFFF]/50 transition-colors hover:bg-[#FFFFFF]/5"
+                                  className="rounded-md px-2 py-1 text-[10px] text-zinc-500 transition-colors hover:bg-zinc-100 dark:text-[#FFFFFF]/50 dark:hover:bg-[#FFFFFF]/5"
                                 >
                                   Cancelar
                                 </button>
@@ -522,7 +543,7 @@ export function RecebimentosClient() {
                               <button
                                 onClick={() => setDeletandoId(payment.id)}
                                 aria-label="Excluir recebimento"
-                                className="rounded-md p-1.5 text-[#FFFFFF]/40 transition-colors hover:bg-[#DD050A]/10 hover:text-[#DD050A]"
+                                className="rounded-md p-1.5 text-zinc-400 transition-colors hover:bg-[#DD050A]/10 hover:text-[#DD050A] dark:text-[#FFFFFF]/40"
                               >
                                 <Trash2 className="h-3.5 w-3.5" />
                               </button>
@@ -538,14 +559,14 @@ export function RecebimentosClient() {
               {/* ── Paginação ── */}
               {totalPaginas > 1 && (
                 <div className="mt-4 flex items-center justify-between">
-                  <p className="text-xs text-[#FFFFFF]/50">
+                  <p className="text-xs text-zinc-500 dark:text-[#FFFFFF]/50">
                     Mostrando {(paginaAtual - 1) * POR_PAGINA + 1}–{Math.min(paginaAtual * POR_PAGINA, filtrados.length)} de {filtrados.length}
                   </p>
                   <div className="flex items-center gap-1">
                     <button
                       onClick={() => setPagina(p => Math.max(1, p - 1))}
                       disabled={paginaAtual === 1}
-                      className="rounded-md p-1.5 text-[#FFFFFF]/50 transition-colors hover:bg-[#FFFFFF]/8 hover:text-[#FFFFFF] disabled:opacity-30"
+                      className="rounded-md p-1.5 text-zinc-500 transition-colors hover:bg-zinc-100 hover:text-zinc-900 disabled:opacity-30 dark:text-[#FFFFFF]/50 dark:hover:bg-[#FFFFFF]/8 dark:hover:text-[#FFFFFF]"
                       aria-label="Página anterior"
                     >
                       <ChevronLeft className="h-4 w-4" />
@@ -560,7 +581,7 @@ export function RecebimentosClient() {
                           className={`min-w-[28px] rounded-md px-2 py-1 text-xs transition-colors ${
                             p === paginaAtual
                               ? "bg-[#DD050A] text-[#FFFFFF]"
-                              : "text-[#FFFFFF]/60 hover:bg-[#FFFFFF]/8 hover:text-[#FFFFFF]"
+                              : "text-zinc-500 hover:bg-zinc-100 hover:text-zinc-900 dark:text-[#FFFFFF]/60 dark:hover:bg-[#FFFFFF]/8 dark:hover:text-[#FFFFFF]"
                           }`}
                         >
                           {p}
@@ -570,7 +591,7 @@ export function RecebimentosClient() {
                     <button
                       onClick={() => setPagina(p => Math.min(totalPaginas, p + 1))}
                       disabled={paginaAtual === totalPaginas}
-                      className="rounded-md p-1.5 text-[#FFFFFF]/50 transition-colors hover:bg-[#FFFFFF]/8 hover:text-[#FFFFFF] disabled:opacity-30"
+                      className="rounded-md p-1.5 text-zinc-500 transition-colors hover:bg-zinc-100 hover:text-zinc-900 disabled:opacity-30 dark:text-[#FFFFFF]/50 dark:hover:bg-[#FFFFFF]/8 dark:hover:text-[#FFFFFF]"
                       aria-label="Próxima página"
                     >
                       <ChevronRight className="h-4 w-4" />
@@ -587,13 +608,13 @@ export function RecebimentosClient() {
       <Sheet open={sheetAberto} onOpenChange={open => { setSheetAberto(open); if (!open) setErro(null) }}>
         <SheetContent
           side="right"
-          className="flex w-full flex-col gap-0 border-l border-[#FFFFFF]/10 bg-[#020203] p-0 text-[#FFFFFF] sm:max-w-md"
+          className="flex w-full flex-col gap-0 border-l border-zinc-200 bg-white p-0 text-zinc-900 sm:max-w-md dark:border-[#FFFFFF]/10 dark:bg-[#020203] dark:text-[#FFFFFF]"
         >
-          <SheetHeader className="border-b border-[#FFFFFF]/10 px-6 py-5">
-            <SheetTitle className="text-base text-[#FFFFFF]">
+          <SheetHeader className="border-b border-zinc-200 px-6 py-5 dark:border-[#FFFFFF]/10">
+            <SheetTitle className="text-base text-zinc-900 dark:text-[#FFFFFF]">
               {modo === "criar" ? "Novo Recebimento" : "Editar Recebimento"}
             </SheetTitle>
-            <SheetDescription className="text-xs text-[#FFFFFF]/55">
+            <SheetDescription className="text-xs text-zinc-500 dark:text-[#FFFFFF]/55">
               {modo === "criar"
                 ? "Preencha os dados para registrar um novo recebimento."
                 : "Atualize os dados do recebimento selecionado."}
@@ -634,7 +655,7 @@ export function RecebimentosClient() {
                     </option>
                     {subscriptions.map(s => (
                       <option key={s.id} value={String(s.id)}>
-                        #{s.id} — Aluno {s.studentId} · Plano {s.planId}
+                        {studentById.get(s.studentId) ?? `Aluno #${s.studentId}`} · {planById.get(s.planId) ?? `Plano #${s.planId}`}
                       </option>
                     ))}
                   </select>
@@ -683,9 +704,10 @@ export function RecebimentosClient() {
                   />
                 </div>
                 <div className="flex flex-col gap-1.5">
-                  <Label htmlFor="metodo" className={labelClass}>Método de Pagamento</Label>
+                  <Label htmlFor="metodo" className={labelClass}>Método de Pagamento *</Label>
                   <select
                     id="metodo"
+                    aria-required="true"
                     value={form.paymentMethod}
                     onChange={e => setForm(f => ({ ...f, paymentMethod: e.target.value }))}
                     className={FORM_SELECT_CLASS}
@@ -705,7 +727,7 @@ export function RecebimentosClient() {
                     type="date"
                     value={form.dueDate}
                     onChange={e => setForm(f => ({ ...f, dueDate: e.target.value }))}
-                    className={`${inputClass} [color-scheme:dark]`}
+                    className={`${inputClass} dark:[color-scheme:dark]`}
                   />
                 </div>
                 <div className="flex flex-col gap-1.5">
@@ -715,7 +737,7 @@ export function RecebimentosClient() {
                     type="date"
                     value={form.issueDate}
                     onChange={e => setForm(f => ({ ...f, issueDate: e.target.value }))}
-                    className={`${inputClass} [color-scheme:dark]`}
+                    className={`${inputClass} dark:[color-scheme:dark]`}
                   />
                 </div>
               </div>
@@ -738,9 +760,9 @@ export function RecebimentosClient() {
             </div>
           </div>
 
-          <SheetFooter className="flex-row gap-2 border-t border-[#FFFFFF]/10 px-6 py-4">
+          <SheetFooter className="flex-row gap-2 border-t border-zinc-200 px-6 py-4 dark:border-[#FFFFFF]/10">
             <SheetClose asChild>
-              <button className="flex-1 rounded-lg border border-[#FFFFFF]/20 py-2 text-sm text-[#FFFFFF]/70 transition-colors hover:bg-[#FFFFFF]/5 hover:text-[#FFFFFF]">
+              <button className="flex-1 rounded-lg border border-zinc-300 py-2 text-sm text-zinc-600 transition-colors hover:bg-zinc-100 hover:text-zinc-900 dark:border-[#FFFFFF]/20 dark:text-[#FFFFFF]/70 dark:hover:bg-[#FFFFFF]/5 dark:hover:text-[#FFFFFF]">
                 Cancelar
               </button>
             </SheetClose>

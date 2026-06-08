@@ -5,6 +5,7 @@ import br.com.geloteam.studentmanagement.domain.plan.port.out.PlanRepositoryPort
 import br.com.geloteam.studentmanagement.domain.student.entity.Student;
 import br.com.geloteam.studentmanagement.domain.student.port.out.StudentRepositoryPort;
 import br.com.geloteam.studentmanagement.domain.subscription.entity.Subscription;
+import br.com.geloteam.studentmanagement.domain.subscription.port.in.SaveSubscriptionUseCase;
 import br.com.geloteam.studentmanagement.domain.subscription.port.out.SubscriptionRepositoryPort;
 import br.com.geloteam.studentmanagement.infrastructure.web.student.dto.StudentResponse;
 import br.com.geloteam.studentmanagement.shared.exception.ConflictException;
@@ -32,6 +33,9 @@ class StudentUseCaseImplTest {
 
     @Mock
     private SubscriptionRepositoryPort subscriptionRepository;
+
+    @Mock
+    private SaveSubscriptionUseCase saveSubscriptionUseCase;
 
     @Mock
     private PlanRepositoryPort planRepository;

@@ -1,13 +1,16 @@
 package br.com.geloteam.studentmanagement.infrastructure.web.user.dto;
 
+import br.com.geloteam.studentmanagement.shared.validation.ValidCpf;
+import br.com.geloteam.studentmanagement.shared.validation.ValidPassword;
 import jakarta.validation.constraints.Email;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotNull;
 
 public record RegisterRequest(
-        @NotBlank(message = "name can't be null or empty") String name,
-        @NotBlank(message = "email can't be null or empty") @Email String email,
-        @NotBlank(message = "password can't be null or empty") String password,
+        @NotBlank(message = "name não pode ser vazio") String name,
+        @NotBlank(message = "email não pode ser vazio") @Email(message = "email inválido") String email,
+        @NotBlank(message = "password não pode ser vazio") @ValidPassword String password,
+        @NotBlank(message = "cpf não pode ser vazio") @ValidCpf String cpf,
         String cellphoneNumber,
-        @NotNull(message = "company id can't be null") Long companyId
+        @NotNull(message = "companyId não pode ser nulo") Long companyId
 ) {}

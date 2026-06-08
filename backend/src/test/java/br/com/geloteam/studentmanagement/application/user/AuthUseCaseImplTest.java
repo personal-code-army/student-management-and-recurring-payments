@@ -52,6 +52,9 @@ class AuthUseCaseImplTest {
     @Mock
     private PasswordEncoder passwordEncoder;
 
+    @Mock
+    private CpfEncryptionService cpfEncryptionService;
+
     @InjectMocks
     private AuthUseCaseImpl authUseCase;
 

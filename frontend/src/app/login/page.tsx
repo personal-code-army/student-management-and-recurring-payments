@@ -15,7 +15,7 @@ export default function Page() {
         <div className="sticky top-0 h-svh w-full">
           <img src="./logo.jpg" alt="Background" className="h-full w-full object-cover opacity-40" />
           <div className="absolute inset-0 flex items-center justify-center p-12 bg-gradient-to-t from-zinc-950 via-transparent to-transparent">
-             <h2 className="text-3xl font-bold text-white max-w-md text-center">Gelo Team Chakuriki</h2>
+            <img src="/logo.png" alt="Gelo Team" className="w-full max-w-lg rounded-3xl object-contain mix-blend-screen" />
           </div>
         </div>
       </div>

@@ -45,6 +45,7 @@ interface Plano {
 }
 
 interface FormState {
+
   name: string
   cpf: string
   birthDate: string
@@ -53,11 +54,6 @@ interface FormState {
   address: string
   planId: string
   active: boolean
-}
-
-interface Plano {
-  id: number
-  name: string
 }
 
 type ApiResponse<T> = {
@@ -122,7 +118,6 @@ export function AlunosClient() {
   const [form, setForm] = useState<FormState>(FORM_VAZIO)
   const [carregando, setCarregando] = useState(true)
   const [erro, setErro] = useState<string | null>(null)
-  const [planos, setPlanos] = useState<Plano[]>([])
   const [apiError, setApiError] = useState<ApiErrorInfo | null>(null)
 
   const carregarAlunos = useCallback(async () => {
@@ -375,9 +370,6 @@ export function AlunosClient() {
                     <Input
                       type="search"
                       placeholder="Buscar por nome, e-mail ou CPF..."
-                      value={busca}
-                      onChange={e => mudarFiltro(() => setBusca(e.target.value))}
-                      className="h-8 w-full border-zinc-300 bg-white pl-8 text-xs text-zinc-900 placeholder:text-zinc-400 focus-visible:border-[#DD050A]/50 sm:w-44 dark:border-[#FFFFFF]/15 dark:bg-[#000000] dark:text-[#FFFFFF] dark:placeholder:text-[#FFFFFF]/35"
                       value={buscaDigitada}
                       onChange={e => setBuscaDigitada(e.target.value)}
                       onKeyDown={e => {
@@ -386,13 +378,13 @@ export function AlunosClient() {
                           aplicarBusca()
                         }
                       }}
-                      className="h-8 w-full border-[#FFFFFF]/15 bg-[#000000] pl-8 text-xs text-[#FFFFFF] placeholder:text-[#FFFFFF]/35 focus-visible:border-[#DD050A]/50 sm:w-44"
+                      className="h-8 w-full border-zinc-300 bg-white pl-8 text-xs text-zinc-900 placeholder:text-zinc-400 focus-visible:border-[#DD050A]/50 sm:w-44 dark:border-[#FFFFFF]/15 dark:bg-[#000000] dark:text-[#FFFFFF] dark:placeholder:text-[#FFFFFF]/35"
                     />
                   </div>
                   <button
                     type="button"
                     onClick={aplicarBusca}
-                    className="h-8 rounded-md border border-[#DD050A]/40 bg-[#DD050A]/15 px-3 text-xs font-medium text-[#FFFFFF] transition-colors hover:border-[#DD050A]/70 hover:bg-[#DD050A]/25"
+                    className="h-8 rounded-md border border-[#DD050A]/40 bg-[#DD050A]/15 px-3 text-xs font-medium text-[#DD050A] transition-colors hover:border-[#DD050A]/70 hover:bg-[#DD050A]/25 dark:text-[#FFFFFF]"
                   >
                     Pesquisar
                   </button>

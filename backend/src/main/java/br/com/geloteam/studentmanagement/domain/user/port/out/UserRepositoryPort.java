@@ -8,6 +8,7 @@ import java.util.Optional;
 public interface UserRepositoryPort {
     Optional<User> findById(Long id);
     Optional<User> findByEmail(String email);
+    Optional<User> findByResetToken(String resetToken);
     List<User> findAll();
     User save(User user);
     void delete(User user);

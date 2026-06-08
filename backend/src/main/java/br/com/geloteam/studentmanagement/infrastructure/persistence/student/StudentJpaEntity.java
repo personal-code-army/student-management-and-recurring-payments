@@ -22,7 +22,7 @@ public class StudentJpaEntity {
     @Column(nullable = false, unique = true)
     private String cpf;
 
-    @Column(name = "birth_date", nullable = false)
+    @Column(name = "birth_date")
     private LocalDate birthDate;
 
     private String phone;

@@ -22,6 +22,7 @@ public class UserRepositoryAdapter implements UserRepositoryPort {
     @Override public User save(User user) { return toDomain(jpa.save(toJpaEntity(user))); }
     @Override public void delete(User user) { jpa.deleteById(user.getId()); }
     @Override public Optional<User> findByEmail(String email) { return jpa.findUserByEmail(email).map(ud -> toDomain((UserJpaEntity) ud)); }
+    @Override public Optional<User> findByResetToken(String resetToken) { return jpa.findByResetToken(resetToken).map(this::toDomain); }
 
     private User toDomain(UserJpaEntity e) {
         User u = new User();
@@ -31,6 +32,9 @@ public class UserRepositoryAdapter implements UserRepositoryPort {
         u.setEmail(e.getEmail());
         u.setPassword(e.getPassword());
         u.setCellphoneNumber(e.getCellphoneNumber());
+        u.setCpf(e.getCpf());
+        u.setResetToken(e.getResetToken());
+        u.setResetTokenExpiry(e.getResetTokenExpiry());
         u.setRole(e.getRole());
         return u;
     }
@@ -47,6 +51,9 @@ public class UserRepositoryAdapter implements UserRepositoryPort {
         e.setEmail(u.getEmail());
         e.setPassword(u.getPassword());
         e.setCellphoneNumber(u.getCellphoneNumber());
+        e.setCpf(u.getCpf());
+        e.setResetToken(u.getResetToken());
+        e.setResetTokenExpiry(u.getResetTokenExpiry());
         e.setRole(u.getRole());
         return e;
     }
