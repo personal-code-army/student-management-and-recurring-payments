@@ -704,9 +704,10 @@ export function RecebimentosClient() {
                   />
                 </div>
                 <div className="flex flex-col gap-1.5">
-                  <Label htmlFor="metodo" className={labelClass}>Método de Pagamento</Label>
+                  <Label htmlFor="metodo" className={labelClass}>Método de Pagamento *</Label>
                   <select
                     id="metodo"
+                    aria-required="true"
                     value={form.paymentMethod}
                     onChange={e => setForm(f => ({ ...f, paymentMethod: e.target.value }))}
                     className={FORM_SELECT_CLASS}

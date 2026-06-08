@@ -85,7 +85,7 @@ class PaymentControllerTest {
         mockMvc.perform(post("/api/payments")
                         .contentType(MediaType.APPLICATION_JSON)
                         .content("""
-                                {"value":99.90,"paymentMethod":"PIX","dueDate":"2026-01-10","subscriptionId":1}
+                                {"value":99.90,"paymentMethod":"PIX","dueDate":"2026-01-10","status":"PENDING","subscriptionId":1}
                                 """))
                 .andExpect(status().isBadRequest())
                 .andExpect(jsonPath("$.code").value("VALIDATION_ERROR"));
@@ -97,7 +97,7 @@ class PaymentControllerTest {
         mockMvc.perform(post("/api/payments")
                         .contentType(MediaType.APPLICATION_JSON)
                         .content("""
-                                {"description":"X","value":10.0,"paymentMethod":"PIX","dueDate":"2026-01-10"}
+                                {"description":"X","value":10.0,"paymentMethod":"PIX","dueDate":"2026-01-10","status":"PENDING"}
                                 """))
                 .andExpect(status().isBadRequest())
                 .andExpect(jsonPath("$.code").value("VALIDATION_ERROR"));

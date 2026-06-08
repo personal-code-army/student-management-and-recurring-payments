@@ -6,7 +6,7 @@ import jakarta.validation.constraints.NotNull;
 
 public record UpdateUserRequest(
         @NotBlank(message = "name não pode ser vazio") String name,
-        @Email(message = "email inválido") String email,
+        @NotBlank(message = "email não pode ser vazio") @Email(message = "email inválido") String email,
         String cellphoneNumber,
         @NotNull(message = "companyId não pode ser nulo") Long companyId
 ) {}

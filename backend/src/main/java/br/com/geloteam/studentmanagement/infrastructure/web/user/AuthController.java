@@ -71,8 +71,10 @@ public class AuthController {
 
     @PostMapping("/forgot-password")
     public ResponseEntity<ApiResponse<Map<String, String>>> forgotPassword(@RequestBody @Valid ForgotPasswordRequest request) {
-        String token = forgotPasswordUseCase.generateResetToken(request.email());
-        return ResponseEntity.ok(ApiResponse.data(Map.of("token", token)));
+        forgotPasswordUseCase.generateResetToken(request.email());
+        return ResponseEntity.accepted().body(
+                ApiResponse.data(Map.of("message", "Se o e-mail existir, um link de redefinição será enviado."))
+        );
     }
 
     @PostMapping("/reset-password")

@@ -1,6 +1,6 @@
 "use client"
 
-import { useEffect, useState } from "react"
+import { useEffect, useRef, useState } from "react"
 import { api } from "@/lib/api"
 import { Input } from "@/components/ui/input"
 import {
@@ -64,22 +64,25 @@ export function ConfiguracoesClient() {
 
   // Toast
   const [toast, setToast] = useState<{ msg: string; ok: boolean } | null>(null)
+  const toastTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null)
 
   const showToast = (msg: string, ok = true) => {
+    if (toastTimerRef.current) clearTimeout(toastTimerRef.current)
     setToast({ msg, ok })
-    setTimeout(() => setToast(null), 3500)
+    toastTimerRef.current = setTimeout(() => setToast(null), 3500)
   }
 
+  useEffect(() => () => { if (toastTimerRef.current) clearTimeout(toastTimerRef.current) }, [])
+
   useEffect(() => {
-    Promise.all([
+    Promise.allSettled([
       api.get<ApiEnvelope<UserData>>("/api/auth/me"),
       api.get<ApiEnvelope<UserData[]>>("/api/users"),
     ])
       .then(([meRes, usersRes]) => {
-        setMe(meRes.data.data)
-        setAllUsers(usersRes.data.data ?? [])
+        if (meRes.status === "fulfilled") setMe(meRes.value.data.data)
+        if (usersRes.status === "fulfilled") setAllUsers(usersRes.value.data.data ?? [])
       })
-      .catch(console.error)
       .finally(() => setLoading(false))
   }, [])
 
@@ -100,7 +103,9 @@ export function ConfiguracoesClient() {
         cellphoneNumber: profileForm.cellphoneNumber,
         companyId: me.companyId,
       })
-      setMe(res.data.data)
+      const updated = res.data.data
+      setMe(updated)
+      setAllUsers(prev => prev.map(u => u.id === updated.id ? updated : u))
       setProfileSheet(false)
       showToast("Perfil atualizado com sucesso")
     } catch {
@@ -147,6 +152,10 @@ export function ConfiguracoesClient() {
   }
 
   const saveUser = async () => {
+    if (userSheetMode === "create" && (!me || !me.companyId)) {
+      showToast("Dados do usuário ainda não carregados. Aguarde e tente novamente.", false)
+      return
+    }
     setSavingUser(true)
     try {
       if (userSheetMode === "create") {
@@ -156,7 +165,7 @@ export function ConfiguracoesClient() {
           password: userForm.password,
           cpf: userForm.cpf,
           cellphoneNumber: userForm.cellphoneNumber,
-          companyId: me?.companyId,
+          companyId: me!.companyId,
         })
         setAllUsers(prev => [...prev, res.data.data])
         showToast("Usuário criado com sucesso")
@@ -280,6 +289,7 @@ export function ConfiguracoesClient() {
                 />
                 <button
                   type="button"
+                  aria-label={showPw.current ? "Ocultar senha atual" : "Mostrar senha atual"}
                   className="absolute right-3 top-1/2 -translate-y-1/2 text-zinc-400 dark:text-[#FFFFFF]/40"
                   onClick={() => setShowPw(s => ({ ...s, current: !s.current }))}
                 >
@@ -299,6 +309,7 @@ export function ConfiguracoesClient() {
                 />
                 <button
                   type="button"
+                  aria-label={showPw.next ? "Ocultar nova senha" : "Mostrar nova senha"}
                   className="absolute right-3 top-1/2 -translate-y-1/2 text-zinc-400 dark:text-[#FFFFFF]/40"
                   onClick={() => setShowPw(s => ({ ...s, next: !s.next }))}
                 >
@@ -318,6 +329,7 @@ export function ConfiguracoesClient() {
                 />
                 <button
                   type="button"
+                  aria-label={showPw.confirm ? "Ocultar confirmação de senha" : "Mostrar confirmação de senha"}
                   className="absolute right-3 top-1/2 -translate-y-1/2 text-zinc-400 dark:text-[#FFFFFF]/40"
                   onClick={() => setShowPw(s => ({ ...s, confirm: !s.confirm }))}
                 >
@@ -387,12 +399,14 @@ export function ConfiguracoesClient() {
                       <td className="py-3">
                         <div className="flex items-center justify-end gap-2">
                           <button
+                            aria-label={`Editar usuário ${u.name}`}
                             onClick={() => openEditUser(u)}
                             className="rounded p-1.5 text-zinc-400 transition-colors hover:bg-zinc-100 hover:text-zinc-700 dark:text-[#FFFFFF]/40 dark:hover:bg-[#FFFFFF]/10 dark:hover:text-[#FFFFFF]"
                           >
                             <Pencil className="h-3.5 w-3.5" />
                           </button>
                           <button
+                            aria-label={`Excluir usuário ${u.name}`}
                             onClick={() => openDeleteUser(u)}
                             className="rounded p-1.5 text-zinc-400 transition-colors hover:bg-red-50 hover:text-[#DD050A] dark:text-[#FFFFFF]/40 dark:hover:bg-[#DD050A]/10 dark:hover:text-[#DD050A]"
                           >

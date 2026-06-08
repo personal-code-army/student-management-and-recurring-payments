@@ -25,12 +25,25 @@ import org.springframework.security.core.userdetails.UsernameNotFoundException;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 
+import java.nio.charset.StandardCharsets;
+import java.security.MessageDigest;
+import java.security.NoSuchAlgorithmException;
 import java.time.LocalDateTime;
+import java.util.HexFormat;
 import java.util.UUID;
 
 @Slf4j
 @Service
 public class AuthUseCaseImpl implements LoginUseCase, RegisterUseCase, MeUseCase, ForgotPasswordUseCase, ResetPasswordUseCase, UserDetailsService {
+
+    private static String sha256(String input) {
+        try {
+            byte[] hash = MessageDigest.getInstance("SHA-256").digest(input.getBytes(StandardCharsets.UTF_8));
+            return HexFormat.of().formatHex(hash);
+        } catch (NoSuchAlgorithmException e) {
+            throw new IllegalStateException("SHA-256 not available", e);
+        }
+    }
 
     private static String maskEmail(String email) {
         if (email == null || !email.contains("@")) return "<invalid>";
@@ -111,11 +124,14 @@ public class AuthUseCaseImpl implements LoginUseCase, RegisterUseCase, MeUseCase
     @Override
     @Transactional
     public String generateResetToken(String email) {
-        User user = userRepository.findByEmail(email)
-                .orElseThrow(() -> new NotFoundException("Usuário não encontrado com e-mail: " + maskEmail(email)));
+        User user = userRepository.findByEmail(email).orElse(null);
+        if (user == null) {
+            log.info("Password reset requested for non-existing account: {}", maskEmail(email));
+            return "";
+        }
 
         String token = UUID.randomUUID().toString();
-        user.setResetToken(token);
+        user.setResetToken(sha256(token));
         user.setResetTokenExpiry(LocalDateTime.now().plusHours(1));
         userRepository.save(user);
 
@@ -126,7 +142,7 @@ public class AuthUseCaseImpl implements LoginUseCase, RegisterUseCase, MeUseCase
     @Override
     @Transactional
     public void resetPassword(String token, String newPassword) {
-        User user = userRepository.findByResetToken(token)
+        User user = userRepository.findByResetToken(sha256(token))
                 .orElseThrow(() -> new NotFoundException("Token inválido ou expirado"));
 
         if (user.getResetTokenExpiry() == null || LocalDateTime.now().isAfter(user.getResetTokenExpiry())) {

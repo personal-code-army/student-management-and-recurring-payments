@@ -215,7 +215,7 @@ class AuthControllerTest {
     // ==================== FORGOT PASSWORD ====================
 
     @Test
-    @DisplayName("POST /api/auth/forgot-password - should return 200 with token")
+    @DisplayName("POST /api/auth/forgot-password - should return 202 with generic message")
     void forgotPasswordSuccess() throws Exception {
         when(forgotPasswordUseCase.generateResetToken("user@test.com")).thenReturn("reset-uuid-token");
 
@@ -224,22 +224,23 @@ class AuthControllerTest {
                         .content("""
                                 {"email":"user@test.com"}
                                 """))
-                .andExpect(status().isOk())
-                .andExpect(jsonPath("$.data.token").value("reset-uuid-token"));
+                .andExpect(status().isAccepted())
+                .andExpect(jsonPath("$.data.token").doesNotExist())
+                .andExpect(jsonPath("$.data.message").exists());
     }
 
     @Test
-    @DisplayName("POST /api/auth/forgot-password - should return 404 when email not found")
+    @DisplayName("POST /api/auth/forgot-password - should return 202 when email not found (no enumeration)")
     void forgotPasswordNotFound() throws Exception {
-        when(forgotPasswordUseCase.generateResetToken(anyString()))
-                .thenThrow(new NotFoundException("Usuário não encontrado com e-mail: ***@test.com"));
+        when(forgotPasswordUseCase.generateResetToken(anyString())).thenReturn("");
 
         mockMvc.perform(post("/api/auth/forgot-password")
                         .contentType(MediaType.APPLICATION_JSON)
                         .content("""
                                 {"email":"ghost@test.com"}
                                 """))
-                .andExpect(status().isNotFound());
+                .andExpect(status().isAccepted())
+                .andExpect(jsonPath("$.data.token").doesNotExist());
     }
 
     @Test
