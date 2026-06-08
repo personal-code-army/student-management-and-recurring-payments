@@ -2,6 +2,7 @@ package br.com.geloteam.studentmanagement.domain.payment.port.out;
 
 import br.com.geloteam.studentmanagement.domain.payment.entity.Payment;
 
+import java.time.LocalDate;
 import java.util.List;
 import java.util.Optional;
 
@@ -13,4 +14,5 @@ public interface PaymentRepositoryPort {
     boolean existsById(Long id);
     List<Payment> findAllBySubscriptionId(Long subscriptionId);
     List<Payment> findAllBySubscriptionStudentName(String name);
+    int markOverdue(LocalDate today);
 }

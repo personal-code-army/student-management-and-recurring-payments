@@ -107,6 +107,7 @@ public class StudentController {
         student.setAddress(request.address());
         student.setActive(request.active());
         student.setPlanId(request.planId());
+        student.setPaymentMethod(request.paymentMethod());
         return student;
     }
 }

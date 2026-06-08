@@ -58,6 +58,15 @@ const fmtDate = (iso: string | null) => {
   return `${d}/${m}/${y}`
 }
 
+const STATUS_MAP: Record<string, string> = {
+  paid:        "Pago",
+  PAID:        "Pago",
+  pending:     "A receber",
+  PENDING:     "A receber",
+  overdue:     "Vencido",
+  OVERDUE:     "Vencido",
+}
+
 const STATUS_STYLE: Record<string, string> = {
   "Pago":      "border-green-500/30 bg-green-500/10 text-green-600 dark:border-[#00FF00]/30 dark:bg-[#00FF00]/10 dark:text-[#00FF00]",
   "A receber": "border-amber-500/30 bg-amber-500/10 text-amber-600 dark:border-[#F59E0B]/30 dark:bg-[#F59E0B]/10 dark:text-[#F59E0B]",
@@ -93,7 +102,8 @@ export default function Dashboard() {
           api.get<ApiEnv<Plan[]>>("/api/plans"),
         ])
         if (!active) return
-        setPayments(Array.isArray(payRes.data?.data) ? payRes.data.data : [])
+        const rawPayments = Array.isArray(payRes.data?.data) ? payRes.data.data : []
+        setPayments(rawPayments.map(p => ({ ...p, status: STATUS_MAP[p.status] ?? p.status })))
         setStudents(Array.isArray(stuRes.data?.data) ? stuRes.data.data : [])
         setSubscriptions(Array.isArray(subRes.data?.data) ? subRes.data.data : [])
         setPlans(Array.isArray(planRes.data?.data) ? planRes.data.data : [])

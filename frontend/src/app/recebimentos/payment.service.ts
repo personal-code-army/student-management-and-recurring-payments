@@ -2,6 +2,22 @@ import { api } from "@/lib/api"
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 
+const STATUS_MAP: Record<string, string> = {
+  paid:       "Pago",
+  PAID:       "Pago",
+  Pago:       "Pago",
+  pending:    "A receber",
+  PENDING:    "A receber",
+  "A receber": "A receber",
+  overdue:    "Vencido",
+  OVERDUE:    "Vencido",
+  Vencido:    "Vencido",
+}
+
+function normalizeStatus(status: string): string {
+  return STATUS_MAP[status] ?? status
+}
+
 export interface Payment {
   id: number
   subscriptionId: number
@@ -44,7 +60,8 @@ export const paymentService = {
   /** GET /api/payments — todos os pagamentos */
   async findAll(): Promise<Payment[]> {
     const res = await api.get<ApiResponse<Payment[]>>("/api/payments")
-    return Array.isArray(res.data?.data) ? res.data.data : []
+    const data = Array.isArray(res.data?.data) ? res.data.data : []
+    return data.map(p => ({ ...p, status: normalizeStatus(p.status) }))
   },
 
   /** GET /api/payments?subscriptionId={id} */
@@ -52,7 +69,8 @@ export const paymentService = {
     const res = await api.get<ApiResponse<Payment[]>>("/api/payments", {
       params: { subscriptionId },
     })
-    return Array.isArray(res.data?.data) ? res.data.data : []
+    const data = Array.isArray(res.data?.data) ? res.data.data : []
+    return data.map(p => ({ ...p, status: normalizeStatus(p.status) }))
   },
 
   /** GET /api/payments?studentName={name} */
@@ -60,7 +78,8 @@ export const paymentService = {
     const res = await api.get<ApiResponse<Payment[]>>("/api/payments", {
       params: { studentName },
     })
-    return Array.isArray(res.data?.data) ? res.data.data : []
+    const data = Array.isArray(res.data?.data) ? res.data.data : []
+    return data.map(p => ({ ...p, status: normalizeStatus(p.status) }))
   },
 
   /** GET /api/payments/{id} */
@@ -68,7 +87,7 @@ export const paymentService = {
     const res = await api.get<ApiResponse<Payment>>(`/api/payments/${id}`)
     const payment = res.data?.data
     if (!payment) throw new Error(`Payment ${id} not found`)
-    return payment
+    return { ...payment, status: normalizeStatus(payment.status) }
   },
 
   /** POST /api/payments */
