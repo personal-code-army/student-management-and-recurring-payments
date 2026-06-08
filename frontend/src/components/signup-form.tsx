@@ -159,34 +159,21 @@ export function SignupForm({ onSwitchTab, ...props }: SignupFormProps) {
                 />
               <FieldDescription className="text-[#FFFFFF]/65">Por favor, confirme sua senha.</FieldDescription>
             </Field>
-            <Field>
-              <Button type="submit" className="w-full bg-[#DD050A] text-[#FFFFFF] hover:bg-[#DD050A]/90">Criar conta</Button>
-              <FieldDescription className="mt-4 text-center text-[#FFFFFF]/70">
-                Já tem uma conta?{" "}
-                <button
-                  type="button"
-                  onClick={onSwitchTab}
-                  className="text-[#FFFFFF] underline underline-offset-4 transition-colors hover:text-[#DD050A]"
-                >
-                  Entrar
-                </button>
-              </FieldDescription>
-            </Field>
             {message ? (
               <FieldDescription className={status === "error" ? "text-red-400" : "text-emerald-400"}>
                 {message}
               </FieldDescription>
             ) : null}
             <Field>
-              <Button type="submit" className="w-full" disabled={status === "loading"}>
+              <Button type="submit" className="w-full bg-[#DD050A] text-[#FFFFFF] hover:bg-[#DD050A]/90" disabled={status === "loading"}>
                 {status === "loading" ? "Criando..." : "Criar conta"}
               </Button>
-              <FieldDescription className="text-center mt-4 text-zinc-400">
+              <FieldDescription className="mt-4 text-center text-[#FFFFFF]/70">
                 Já tem uma conta?{" "}
-                <button 
+                <button
                   type="button"
                   onClick={onSwitchTab}
-                  className="text-[#09090B] underline underline-offset-4 hover:text-[#535353] transition-colors"
+                  className="text-[#FFFFFF] underline underline-offset-4 transition-colors hover:text-[#DD050A]"
                 >
                   Entrar
                 </button>
