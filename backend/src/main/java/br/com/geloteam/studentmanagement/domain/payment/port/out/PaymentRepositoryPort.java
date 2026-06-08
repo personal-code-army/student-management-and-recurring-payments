@@ -14,5 +14,5 @@ public interface PaymentRepositoryPort {
     boolean existsById(Long id);
     List<Payment> findAllBySubscriptionId(Long subscriptionId);
     List<Payment> findAllBySubscriptionStudentName(String name);
-    List<Payment> findAllPendingOverdue(LocalDate today);
+    int markOverdue(LocalDate today);
 }

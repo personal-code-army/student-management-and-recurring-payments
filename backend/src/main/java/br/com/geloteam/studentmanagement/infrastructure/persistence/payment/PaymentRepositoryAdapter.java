@@ -25,7 +25,7 @@ public class PaymentRepositoryAdapter implements PaymentRepositoryPort {
     @Override public boolean existsById(Long id) { return jpa.existsById(id); }
     @Override public List<Payment> findAllBySubscriptionId(Long subscriptionId) { return jpa.findAllBySubscriptionId(subscriptionId).stream().map(this::toDomain).toList(); }
     @Override public List<Payment> findAllBySubscriptionStudentName(String name) { return jpa.findAllBySubscriptionStudentName(name).stream().map(this::toDomain).toList(); }
-    @Override public List<Payment> findAllPendingOverdue(LocalDate today) { return jpa.findAllByStatusAndDueDateBefore("A receber", today).stream().map(this::toDomain).toList(); }
+    @Override public int markOverdue(LocalDate today) { return jpa.markOverdue(today); }
 
     private Payment toDomain(PaymentJpaEntity e) {
         Payment p = new Payment();
