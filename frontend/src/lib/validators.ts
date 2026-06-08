@@ -24,8 +24,38 @@ export function formatPhone(value: string): string {
   return `(${digits.slice(0, 2)}) ${digits.slice(2, 7)}-${digits.slice(7)}`
 }
 
+export function isValidCpf(value: string): boolean {
+  const digits = value.replace(/\D/g, "")
+  if (digits.length !== 11) return false
+  if (/^(\d)\1{10}$/.test(digits)) return false
+
+  let sum = 0
+  for (let i = 0; i < 9; i++) sum += parseInt(digits[i]) * (10 - i)
+  let first = 11 - (sum % 11)
+  if (first >= 10) first = 0
+  if (first !== parseInt(digits[9])) return false
+
+  sum = 0
+  for (let i = 0; i < 10; i++) sum += parseInt(digits[i]) * (11 - i)
+  let second = 11 - (sum % 11)
+  if (second >= 10) second = 0
+  return second === parseInt(digits[10])
+}
+
 export function isValidEmail(value: string): boolean {
   const trimmed = value.trim()
   if (!trimmed) return true
   return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(trimmed)
+}
+
+export function isValidBirthDate(value: string): boolean {
+  if (!value) return true
+  const date = new Date(value + "T00:00:00")
+  if (isNaN(date.getTime())) return false
+  const today = new Date()
+  today.setHours(0, 0, 0, 0)
+  if (date >= today) return false
+  const minDate = new Date(today)
+  minDate.setFullYear(today.getFullYear() - 120)
+  return date >= minDate
 }

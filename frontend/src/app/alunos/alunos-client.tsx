@@ -20,7 +20,7 @@ import {
   Phone, Pencil, Trash2, ChevronLeft, ChevronRight, Search,
 } from "lucide-react"
 import { api } from "@/lib/api"
-import { formatCpf, formatPhone, isValidCpf, isValidEmail, normalizeCpf, normalizePhone } from "@/lib/validators"
+import { formatCpf, formatPhone, isValidBirthDate, isValidCpf, isValidEmail, normalizeCpf, normalizePhone } from "@/lib/validators"
 import { ApiErrorScreen } from "@/components/api-error-screen"
 import { type ApiErrorInfo, getApiErrorInfo, resolveApiErrorContent } from "@/lib/api-errors"
 
@@ -209,6 +209,8 @@ export function AlunosClient() {
   }, [form.cpf])
   const cpfInvalido = form.cpf.trim() !== "" && !cpfValido
 
+  const nascimentoInvalido = form.birthDate !== "" && !isValidBirthDate(form.birthDate)
+
   function mudarFiltro(fn: () => void) { fn(); setPagina(1) }
   function aplicarBusca() {
     mudarFiltro(() => setBusca(buscaDigitada.trim()))
@@ -237,7 +239,7 @@ export function AlunosClient() {
   }
 
   async function salvar() {
-    if (!form.name.trim() || !form.cpf.trim() || cpfInvalido || !form.birthDate || !emailValido) return
+    if (!form.name.trim() || !form.cpf.trim() || cpfInvalido || !form.birthDate || nascimentoInvalido || !emailValido) return
     try {
       const cpfDigits = normalizeCpf(form.cpf)
 
@@ -627,8 +629,18 @@ export function AlunosClient() {
 
               <div className="flex flex-col gap-1.5">
                 <Label htmlFor="nascimento" className={labelClass}>Data de nascimento</Label>
-                <Input id="nascimento" type="date" value={form.birthDate} onChange={e => setForm(f => ({ ...f, birthDate: e.target.value }))}
-                  className={`${inputClass} [color-scheme:light] dark:[color-scheme:dark]`} />
+                <Input
+                  id="nascimento"
+                  type="date"
+                  value={form.birthDate}
+                  onChange={e => setForm(f => ({ ...f, birthDate: e.target.value }))}
+                  className={`${inputClass} [color-scheme:light] dark:[color-scheme:dark]${nascimentoInvalido ? " border-[#DD050A]/60 focus-visible:border-[#DD050A]" : ""}`}
+                  aria-invalid={nascimentoInvalido}
+                  aria-describedby={nascimentoInvalido ? "nascimento-error" : undefined}
+                />
+                {nascimentoInvalido && (
+                  <p id="nascimento-error" className="text-xs text-[#DD050A]">Data de nascimento inválida.</p>
+                )}
               </div>
 
               <div className="grid grid-cols-2 gap-4">
@@ -731,7 +743,7 @@ export function AlunosClient() {
             <button
               onClick={salvar}
               className="flex-1 rounded-lg bg-[#DD050A] py-2 text-sm font-medium text-[#FFFFFF] transition-colors hover:bg-[#DD050A]/85 disabled:opacity-50"
-              disabled={!form.name.trim() || !form.cpf.trim() || cpfInvalido || !form.birthDate || !emailValido}
+              disabled={!form.name.trim() || !form.cpf.trim() || cpfInvalido || !form.birthDate || nascimentoInvalido || !emailValido}
             >
               {modo === "criar" ? "Cadastrar" : "Salvar"}
             </button>
