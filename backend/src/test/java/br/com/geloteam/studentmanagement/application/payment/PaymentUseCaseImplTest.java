@@ -51,6 +51,7 @@ class PaymentUseCaseImplTest {
         plan.setId(2L);
         plan.setName("Mensal");
         plan.setMonthlyAmount(99.90);
+        plan.setFrequency(1);
         return plan;
     }
 
