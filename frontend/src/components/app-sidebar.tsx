@@ -1,8 +1,9 @@
 "use client"
 
 import { useEffect, useState } from "react"
-import { LayoutDashboard, DollarSign, Users, Box, Settings, LogOut } from "lucide-react"
+import { LayoutDashboard, DollarSign, Users, Box, Settings, LogOut, Moon } from "lucide-react"
 import { usePathname, useRouter } from "next/navigation"
+import { useTheme } from "next-themes"
 import {
   Sidebar,
   SidebarContent,
@@ -31,11 +32,11 @@ interface UsuarioLogado {
 
 type ApiResponse<T> = { data: T }
 
-const CLIP_DIAGONAL = "polygon(18% 0, 100% 0, 82% 100%, 0 100%)"
 
 export function AppSidebar() {
   const router = useRouter()
   const pathname = usePathname()
+  const { theme, setTheme } = useTheme()
   const [usuario, setUsuario] = useState<UsuarioLogado | null>(null)
 
   useEffect(() => {
@@ -57,11 +58,8 @@ export function AppSidebar() {
       <SidebarHeader className="relative overflow-hidden border-b border-zinc-200 px-4 py-5 dark:border-[#FFFFFF]/10">
         <div className="pointer-events-none absolute -right-10 -top-10 h-24 w-24 rounded-full bg-[#DD050A]/20 blur-2xl" />
         <div className="relative flex items-center gap-3">
-          <div
-            className="flex h-10 w-10 items-center justify-center bg-[#DD050A] shadow-[0_0_18px_rgba(221,5,10,0.45)]"
-            style={{ clipPath: CLIP_DIAGONAL }}
-          >
-            <span className="text-base font-black italic text-[#FFFFFF]">G</span>
+          <div className="flex h-10 w-10 shrink-0 items-center justify-center overflow-hidden rounded-full bg-black shadow-[0_0_14px_rgba(221,5,10,0.35)]">
+            <img src="/logo.png" alt="Gelo Team" className="h-9 w-9 object-contain" />
           </div>
           <div>
             <p className="text-sm font-black uppercase italic leading-none tracking-wide text-zinc-900 dark:text-[#FFFFFF]">Gelo Team</p>
@@ -121,6 +119,34 @@ export function AppSidebar() {
         </div>
 
         <SidebarMenu>
+          <SidebarMenuItem>
+            <div
+              role="button"
+              tabIndex={0}
+              onClick={() => setTheme(theme === "dark" ? "light" : "dark")}
+              onKeyDown={e => e.key === "Enter" && setTheme(theme === "dark" ? "light" : "dark")}
+              className="flex w-full cursor-pointer items-center justify-between rounded-md px-3 py-2.5 text-zinc-600 transition-all hover:bg-zinc-100 hover:text-zinc-900 dark:text-[#FFFFFF]/70 dark:hover:bg-[#FFFFFF]/5 dark:hover:text-[#FFFFFF]"
+            >
+              <div className="flex items-center gap-3">
+                <Moon className="h-4 w-4" />
+                <span className="text-sm">Modo Escuro</span>
+              </div>
+              {/* Toggle switch */}
+              <div
+                role="switch"
+                aria-checked={theme === "dark"}
+                className={`relative h-5 w-9 shrink-0 rounded-full transition-colors ${
+                  theme === "dark" ? "bg-[#DD050A]" : "bg-zinc-300 dark:bg-[#FFFFFF]/25"
+                }`}
+              >
+                <span
+                  className={`absolute top-0.5 h-4 w-4 rounded-full bg-white shadow-sm transition-transform ${
+                    theme === "dark" ? "translate-x-[18px]" : "translate-x-0.5"
+                  }`}
+                />
+              </div>
+            </div>
+          </SidebarMenuItem>
           <SidebarMenuItem>
             <SidebarMenuButton asChild className="rounded-md text-zinc-600 transition-all hover:bg-zinc-100 hover:text-zinc-900 dark:text-[#FFFFFF]/70 dark:hover:bg-[#FFFFFF]/5 dark:hover:text-[#FFFFFF]">
               <a href="/configuracoes" className="flex items-center gap-3 px-3 py-2.5">
