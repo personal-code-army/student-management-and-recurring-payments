@@ -7,7 +7,7 @@ public class CpfValidator implements ConstraintValidator<ValidCpf, String> {
 
     @Override
     public boolean isValid(String cpf, ConstraintValidatorContext context) {
-        if (cpf == null || cpf.isBlank()) return false;
+        if (cpf == null || cpf.isBlank()) return true;
 
         String digits = cpf.replaceAll("[^0-9]", "");
         if (digits.length() != 11) return false;

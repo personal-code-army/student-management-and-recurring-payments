@@ -9,6 +9,8 @@ import br.com.geloteam.studentmanagement.shared.exception.NotFoundException;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
+
+import java.time.LocalDate;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
@@ -261,7 +263,7 @@ class PaymentUseCaseImplTest {
         assertEquals(99.90, result.getValue());
         assertEquals("Pix", result.getPaymentMethod());
         assertEquals("A receber", result.getStatus());
-        assertNull(result.getIssueDate());
+        assertEquals(LocalDate.now(), result.getIssueDate());
         assertEquals(10L, result.getSubscriptionId());
         verify(planRepository).findById(2L);
         verify(paymentRepository).save(any(Payment.class));

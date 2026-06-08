@@ -10,7 +10,7 @@ public record RegisterRequest(
         @NotBlank(message = "name não pode ser vazio") String name,
         @NotBlank(message = "email não pode ser vazio") @Email(message = "email inválido") String email,
         @NotBlank(message = "password não pode ser vazio") @ValidPassword String password,
-        @NotBlank(message = "cpf não pode ser vazio") @ValidCpf String cpf,
+        @ValidCpf String cpf,
         String cellphoneNumber,
         @NotNull(message = "companyId não pode ser nulo") Long companyId
 ) {}
