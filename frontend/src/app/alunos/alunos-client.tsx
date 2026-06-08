@@ -20,7 +20,7 @@ import {
   Phone, Pencil, Trash2, ChevronLeft, ChevronRight, Search,
 } from "lucide-react"
 import { api } from "@/lib/api"
-import { formatCpf, formatPhone, isValidEmail, normalizeCpf, normalizePhone } from "@/lib/validators"
+import { formatCpf, formatPhone, isValidCpf, isValidEmail, normalizeCpf, normalizePhone } from "@/lib/validators"
 import { ApiErrorScreen } from "@/components/api-error-screen"
 import { type ApiErrorInfo, getApiErrorInfo, resolveApiErrorContent } from "@/lib/api-errors"
 
@@ -167,10 +167,12 @@ export function AlunosClient() {
     .filter(a => {
       if (busca === "") return true
       const termo = busca.toLowerCase()
+      const termoDigitos = normalizeCpf(busca)
       return (
         a.name.toLowerCase().includes(termo) ||
         a.email?.toLowerCase().includes(termo) ||
-        a.cpf?.toLowerCase().includes(termo)
+        a.cpf?.toLowerCase().includes(termo) ||
+        (termoDigitos.length > 0 && normalizeCpf(a.cpf ?? "").includes(termoDigitos))
       )
     })
     .filter(a => {
@@ -201,6 +203,12 @@ export function AlunosClient() {
   const emailValido = useMemo(() => isValidEmail(form.email), [form.email])
   const emailInvalido = form.email.trim() !== "" && !emailValido
 
+  const cpfValido = useMemo(() => {
+    if (!form.cpf.trim()) return true
+    return isValidCpf(normalizeCpf(form.cpf))
+  }, [form.cpf])
+  const cpfInvalido = form.cpf.trim() !== "" && !cpfValido
+
   function mudarFiltro(fn: () => void) { fn(); setPagina(1) }
   function aplicarBusca() {
     mudarFiltro(() => setBusca(buscaDigitada.trim()))
@@ -229,13 +237,9 @@ export function AlunosClient() {
   }
 
   async function salvar() {
-    if (!form.name.trim() || !form.cpf.trim() || !form.birthDate || !emailValido) return
+    if (!form.name.trim() || !form.cpf.trim() || cpfInvalido || !form.birthDate || !emailValido) return
     try {
       const cpfDigits = normalizeCpf(form.cpf)
-      if (cpfDigits.length !== 11) {
-        setErro("CPF invalido.")
-        return
-      }
 
       const planIdValue = form.planId.trim()
       if (planIdValue && !/^\d+$/.test(planIdValue)) {
@@ -417,7 +421,7 @@ export function AlunosClient() {
                   <TableRow className="border-zinc-200 hover:bg-transparent dark:border-[#FFFFFF]/10">
                     <TableHead scope="col" className="text-xs uppercase text-zinc-500 dark:text-[#FFFFFF]/60">Aluno</TableHead>
                     <TableHead scope="col" className="hidden text-xs uppercase text-zinc-500 md:table-cell dark:text-[#FFFFFF]/60">Contato</TableHead>
-                    <TableHead scope="col" className="hidden text-xs uppercase text-zinc-500 sm:table-cell dark:text-[#FFFFFF]/60">CPF</TableHead>
+                    <TableHead scope="col" className="hidden text-xs uppercase text-zinc-500 md:table-cell dark:text-[#FFFFFF]/60">CPF</TableHead>
                     <TableHead scope="col" className="hidden text-xs uppercase text-zinc-500 lg:table-cell dark:text-[#FFFFFF]/60">Nascimento</TableHead>
                     <TableHead scope="col" className="hidden text-xs uppercase text-zinc-500 md:table-cell dark:text-[#FFFFFF]/60">Plano</TableHead>
                     <TableHead scope="col" className="text-xs uppercase text-zinc-500 dark:text-[#FFFFFF]/60">Status</TableHead>
@@ -455,7 +459,7 @@ export function AlunosClient() {
                           <p className="text-sm text-zinc-700 dark:text-[#FFFFFF]/80">{aluno.email ?? "-"}</p>
                           <p className="mt-0.5 text-xs text-zinc-500 dark:text-[#FFFFFF]/50">{aluno.phone ?? "-"}</p>
                         </TableCell>
-                        <TableCell className="hidden text-zinc-600 sm:table-cell dark:text-[#FFFFFF]/70">{aluno.cpf}</TableCell>
+                        <TableCell className="hidden text-zinc-600 md:table-cell dark:text-[#FFFFFF]/70">{formatCpf(aluno.cpf)}</TableCell>
                         <TableCell className="hidden text-zinc-600 lg:table-cell dark:text-[#FFFFFF]/70">{formatarData(aluno.birthDate)}</TableCell>
                         <TableCell className="hidden text-zinc-600 md:table-cell dark:text-[#FFFFFF]/70">
                           {aluno.planId != null ? (planoPorId.get(aluno.planId)?.name ?? `#${aluno.planId}`) : "-"}
@@ -612,8 +616,13 @@ export function AlunosClient() {
                   value={form.cpf}
                   onChange={e => setForm(f => ({ ...f, cpf: formatCpf(e.target.value) }))}
                   placeholder="000.000.000-00"
-                  className={inputClass}
+                  className={`${inputClass}${cpfInvalido ? " border-[#DD050A]/60 focus-visible:border-[#DD050A]" : ""}`}
+                  aria-invalid={cpfInvalido}
+                  aria-describedby={cpfInvalido ? "cpf-error" : undefined}
                 />
+                {cpfInvalido && (
+                  <p id="cpf-error" className="text-xs text-[#DD050A]">CPF inválido.</p>
+                )}
               </div>
 
               <div className="flex flex-col gap-1.5">
@@ -722,7 +731,7 @@ export function AlunosClient() {
             <button
               onClick={salvar}
               className="flex-1 rounded-lg bg-[#DD050A] py-2 text-sm font-medium text-[#FFFFFF] transition-colors hover:bg-[#DD050A]/85 disabled:opacity-50"
-              disabled={!form.name.trim() || !form.cpf.trim() || !form.birthDate || !emailValido}
+              disabled={!form.name.trim() || !form.cpf.trim() || cpfInvalido || !form.birthDate || !emailValido}
             >
               {modo === "criar" ? "Cadastrar" : "Salvar"}
             </button>
