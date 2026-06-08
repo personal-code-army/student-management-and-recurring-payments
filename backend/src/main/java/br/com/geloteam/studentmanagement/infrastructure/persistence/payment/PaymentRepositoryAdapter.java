@@ -5,6 +5,7 @@ import br.com.geloteam.studentmanagement.domain.payment.port.out.PaymentReposito
 import br.com.geloteam.studentmanagement.infrastructure.persistence.subscription.SubscriptionJpaEntity;
 import org.springframework.stereotype.Repository;
 
+import java.time.LocalDate;
 import java.util.List;
 import java.util.Optional;
 
@@ -24,6 +25,7 @@ public class PaymentRepositoryAdapter implements PaymentRepositoryPort {
     @Override public boolean existsById(Long id) { return jpa.existsById(id); }
     @Override public List<Payment> findAllBySubscriptionId(Long subscriptionId) { return jpa.findAllBySubscriptionId(subscriptionId).stream().map(this::toDomain).toList(); }
     @Override public List<Payment> findAllBySubscriptionStudentName(String name) { return jpa.findAllBySubscriptionStudentName(name).stream().map(this::toDomain).toList(); }
+    @Override public List<Payment> findAllPendingOverdue(LocalDate today) { return jpa.findAllByStatusAndDueDateBefore("A receber", today).stream().map(this::toDomain).toList(); }
 
     private Payment toDomain(PaymentJpaEntity e) {
         Payment p = new Payment();

@@ -13,5 +13,6 @@ public record StudentRequest(
         String email,
         String address,
         Long planId,
-        boolean active
+        boolean active,
+        String paymentMethod
 ) {}

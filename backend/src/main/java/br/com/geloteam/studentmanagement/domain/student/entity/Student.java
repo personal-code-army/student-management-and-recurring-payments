@@ -16,4 +16,5 @@ public class Student {
     private String address;
     private Long planId;
     private boolean active;
+    private String paymentMethod;
 }

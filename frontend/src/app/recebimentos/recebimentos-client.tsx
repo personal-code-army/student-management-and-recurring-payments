@@ -21,7 +21,7 @@ import { Separator } from "@/components/ui/separator"
 import {
   DollarSign, TrendingDown, CheckCircle, Plus, Pencil,
   Trash2, ChevronLeft, ChevronRight, Search, Filter,
-  AlertCircle, Clock, Loader2,
+  AlertCircle, Clock, Loader2, BadgeCheck,
 } from "lucide-react"
 import {
   paymentService, subscriptionService,
@@ -138,6 +138,7 @@ function formToRequest(form: FormState): PaymentRequest {
 export function RecebimentosClient() {
   const [payments, setPayments]             = useState<Payment[]>([])
   const [subscriptions, setSubscriptions]   = useState<Subscription[]>([])
+  const [subLookup, setSubLookup]           = useState<Subscription[]>([])
   const [students, setStudents]             = useState<StudentLite[]>([])
   const [plans, setPlans]                   = useState<PlanLite[]>([])
   const [busca, setBusca]                   = useState("")
@@ -147,6 +148,7 @@ export function RecebimentosClient() {
   const [modo, setModo]                     = useState<"criar" | "editar">("criar")
   const [editando, setEditando]             = useState<Payment | null>(null)
   const [deletandoId, setDeletandoId]       = useState<number | null>(null)
+  const [recebendoId, setRecebendoId]       = useState<number | null>(null)
   const [form, setForm]                     = useState<FormState>(FORM_VAZIO)
   const [carregando, setCarregando]         = useState(true)
   const [carregandoSubs, setCarregandoSubs] = useState(false)
@@ -170,6 +172,20 @@ export function RecebimentosClient() {
   }, [])
 
   useEffect(() => { void carregarPayments() }, [carregarPayments])
+
+  // ── Fetch de referência para lookup na tabela (mount) ─────────────────────
+
+  useEffect(() => {
+    Promise.all([
+      api.get<{ data: Subscription[] }>("/api/subscriptions"),
+      api.get<{ data: StudentLite[] }>("/api/students"),
+    ])
+      .then(([subRes, stuRes]) => {
+        setSubLookup(Array.isArray(subRes.data?.data) ? subRes.data.data : [])
+        setStudents(Array.isArray(stuRes.data?.data) ? stuRes.data.data : [])
+      })
+      .catch(err => console.error("Erro ao carregar dados de referência", err))
+  }, [])
 
   // ── Fetch subscriptions ao abrir sheet de criação ──────────────────────────
 
@@ -196,6 +212,7 @@ export function RecebimentosClient() {
 
   const studentById = useMemo(() => new Map(students.map(s => [s.id, s.name])), [students])
   const planById    = useMemo(() => new Map(plans.map(p => [p.id, p.name])), [plans])
+  const subById     = useMemo(() => new Map(subLookup.map(s => [s.id, s.studentId])), [subLookup])
 
   // ── Derived state ──────────────────────────────────────────────────────────
 
@@ -205,14 +222,22 @@ export function RecebimentosClient() {
         .filter(p => {
           if (busca === "") return true
           const termo = busca.toLowerCase()
+          const studentName = studentById.get(subById.get(p.subscriptionId) ?? -1) ?? ""
           return (
             p.description.toLowerCase().includes(termo) ||
             String(p.id).includes(termo) ||
-            (p.paymentMethod ?? "").toLowerCase().includes(termo)
+            (p.paymentMethod ?? "").toLowerCase().includes(termo) ||
+            studentName.toLowerCase().includes(termo)
           )
         })
-        .filter(p => filtroStatus === "Todos" ? true : p.status === filtroStatus),
-    [payments, busca, filtroStatus]
+        .filter(p => filtroStatus === "Todos" ? true : p.status === filtroStatus)
+        .sort((a, b) => {
+          if (!a.issueDate && !b.issueDate) return 0
+          if (!a.issueDate) return 1
+          if (!b.issueDate) return -1
+          return b.issueDate.localeCompare(a.issueDate)
+        }),
+    [payments, busca, filtroStatus, studentById, subById]
   )
 
   const totalPaginas = Math.max(1, Math.ceil(filtrados.length / POR_PAGINA))
@@ -311,6 +336,28 @@ export function RecebimentosClient() {
       setErro("Não foi possível excluir o recebimento.")
     } finally {
       setDeletandoId(null)
+    }
+  }
+
+  async function receberPagamento(payment: Payment) {
+    try {
+      setRecebendoId(payment.id)
+      const request: PaymentRequest = {
+        subscriptionId: payment.subscriptionId,
+        description:    payment.description,
+        value:          payment.value,
+        paymentMethod:  payment.paymentMethod,
+        dueDate:        payment.dueDate,
+        issueDate:      payment.issueDate,
+        status:         "Pago",
+      }
+      const updated = await paymentService.update(payment.id, request)
+      setPayments(prev => prev.map(p => p.id === payment.id ? updated : p))
+    } catch (err) {
+      console.error("Erro ao registrar recebimento", err)
+      setErro("Não foi possível registrar o recebimento.")
+    } finally {
+      setRecebendoId(null)
     }
   }
 
@@ -460,9 +507,10 @@ export function RecebimentosClient() {
                     <TableHead scope="col" className="w-16 text-xs uppercase text-zinc-500 dark:text-[#FFFFFF]/60">ID</TableHead>
                     <TableHead scope="col" className="text-xs uppercase text-zinc-500 dark:text-[#FFFFFF]/60">Valor</TableHead>
                     <TableHead scope="col" className="text-xs uppercase text-zinc-500 dark:text-[#FFFFFF]/60">Descrição</TableHead>
+                    <TableHead scope="col" className="hidden text-xs uppercase text-zinc-500 md:table-cell dark:text-[#FFFFFF]/60">Aluno</TableHead>
                     <TableHead scope="col" className="hidden text-xs uppercase text-zinc-500 sm:table-cell dark:text-[#FFFFFF]/60">Emissão</TableHead>
-                    <TableHead scope="col" className="hidden text-xs uppercase text-zinc-500 md:table-cell dark:text-[#FFFFFF]/60">Vencimento</TableHead>
-                    <TableHead scope="col" className="hidden text-xs uppercase text-zinc-500 lg:table-cell dark:text-[#FFFFFF]/60">Método</TableHead>
+                    <TableHead scope="col" className="hidden text-xs uppercase text-zinc-500 lg:table-cell dark:text-[#FFFFFF]/60">Vencimento</TableHead>
+                    <TableHead scope="col" className="hidden text-xs uppercase text-zinc-500 xl:table-cell dark:text-[#FFFFFF]/60">Método</TableHead>
                     <TableHead scope="col" className="text-xs uppercase text-zinc-500 dark:text-[#FFFFFF]/60">Status</TableHead>
                     <TableHead scope="col" className="text-right text-xs uppercase text-zinc-500 dark:text-[#FFFFFF]/60">Ações</TableHead>
                   </TableRow>
@@ -472,7 +520,7 @@ export function RecebimentosClient() {
                   {carregando ? (
                     Array.from({ length: 6 }).map((_, i) => (
                       <TableRow key={i} className="border-[#FFFFFF]/8">
-                        {Array.from({ length: 8 }).map((__, j) => (
+                        {Array.from({ length: 9 }).map((__, j) => (
                           <TableCell key={j}>
                             <div className="h-3 animate-pulse rounded bg-[#FFFFFF]/10" />
                           </TableCell>
@@ -481,7 +529,7 @@ export function RecebimentosClient() {
                     ))
                   ) : visiveis.length === 0 ? (
                     <TableRow className="border-0 hover:bg-transparent">
-                      <TableCell colSpan={8} className="py-12 text-center text-sm text-[#FFFFFF]/40">
+                      <TableCell colSpan={9} className="py-12 text-center text-sm text-[#FFFFFF]/40">
                         Nenhum recebimento encontrado.
                       </TableCell>
                     </TableRow>
@@ -495,13 +543,16 @@ export function RecebimentosClient() {
                             {payment.description}
                           </span>
                         </TableCell>
+                        <TableCell className="hidden text-xs text-zinc-700 md:table-cell dark:text-[#FFFFFF]/80">
+                          {studentById.get(subById.get(payment.subscriptionId) ?? -1) ?? "—"}
+                        </TableCell>
                         <TableCell className="hidden text-xs text-zinc-500 sm:table-cell dark:text-[#FFFFFF]/65">
                           {formatarData(payment.issueDate)}
                         </TableCell>
-                        <TableCell className="hidden text-xs text-zinc-500 md:table-cell dark:text-[#FFFFFF]/65">
+                        <TableCell className="hidden text-xs text-zinc-500 lg:table-cell dark:text-[#FFFFFF]/65">
                           {formatarData(payment.dueDate)}
                         </TableCell>
-                        <TableCell className="hidden lg:table-cell">
+                        <TableCell className="hidden xl:table-cell">
                           <span className="text-xs text-zinc-500 dark:text-[#FFFFFF]/55">{payment.paymentMethod ?? "—"}</span>
                         </TableCell>
                         <TableCell>
@@ -517,6 +568,20 @@ export function RecebimentosClient() {
                         </TableCell>
                         <TableCell className="text-right">
                           <div className="flex items-center justify-end gap-1">
+                            {payment.status !== "Pago" && (
+                              <button
+                                onClick={() => receberPagamento(payment)}
+                                disabled={recebendoId === payment.id}
+                                aria-label="Marcar como pago"
+                                title="Marcar como pago"
+                                className="rounded-md p-1.5 text-zinc-400 transition-colors hover:bg-green-500/10 hover:text-green-600 disabled:opacity-50 dark:text-[#FFFFFF]/40 dark:hover:bg-[#00FF00]/10 dark:hover:text-[#00FF00]"
+                              >
+                                {recebendoId === payment.id
+                                  ? <Loader2 className="h-3.5 w-3.5 animate-spin" />
+                                  : <BadgeCheck className="h-3.5 w-3.5" />
+                                }
+                              </button>
+                            )}
                             <button
                               onClick={() => abrirEditar(payment)}
                               aria-label="Editar recebimento"

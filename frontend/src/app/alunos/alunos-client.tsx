@@ -45,7 +45,6 @@ interface Plano {
 }
 
 interface FormState {
-
   name: string
   cpf: string
   birthDate: string
@@ -54,6 +53,7 @@ interface FormState {
   address: string
   planId: string
   active: boolean
+  paymentMethod: string
 }
 
 type ApiResponse<T> = {
@@ -72,6 +72,7 @@ const FORM_VAZIO: FormState = {
   address: "",
   planId: "",
   active: true,
+  paymentMethod: "",
 }
 
 const STATUS_STYLE: Record<"Ativo" | "Inativo", string> = {
@@ -221,6 +222,7 @@ export function AlunosClient() {
       address: a.address ?? "",
       planId: a.planId != null ? String(a.planId) : "",
       active: a.active,
+      paymentMethod: "",
     })
     setEditando(a)
     setSheetAberto(true)
@@ -251,6 +253,7 @@ export function AlunosClient() {
         address: form.address?.trim() || null,
         planId,
         active: form.active,
+        paymentMethod: modo === "criar" ? (form.paymentMethod || null) : undefined,
       }
 
       if (modo === "criar") {
@@ -674,6 +677,25 @@ export function AlunosClient() {
                   </select>
                 </div>
               </div>
+
+              {modo === "criar" && (
+                <div className="flex flex-col gap-1.5">
+                  <Label htmlFor="formaPagamento" className={labelClass}>Forma de pagamento</Label>
+                  <select
+                    id="formaPagamento"
+                    value={form.paymentMethod}
+                    onChange={e => setForm(f => ({ ...f, paymentMethod: e.target.value }))}
+                    className={FORM_SELECT_CLASS}
+                  >
+                    <option value="">Não informado</option>
+                    <option value="PIX">PIX</option>
+                    <option value="Cartão de Crédito">Cartão de Crédito</option>
+                    <option value="Cartão de Débito">Cartão de Débito</option>
+                    <option value="Dinheiro">Dinheiro</option>
+                    <option value="Boleto">Boleto</option>
+                  </select>
+                </div>
+              )}
 
               <div className="flex flex-col gap-1.5">
                 <Label htmlFor="ativo" className={labelClass}>Status</Label>

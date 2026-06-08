@@ -51,6 +51,7 @@ public class CreateStudentUseCaseImpl implements CreateStudentUseCase {
             subscription.setPlanId(saved.getPlanId());
             subscription.setStartDate(LocalDate.now());
             subscription.setStatus("Ativo");
+            subscription.setPaymentMethod(student.getPaymentMethod());
             saveSubscriptionUseCase.execute(subscription);
             log.info("Assinatura criada automaticamente para o aluno: {}", saved.getName());
         }
